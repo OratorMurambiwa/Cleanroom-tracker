@@ -1,0 +1,10 @@
+modules = ["python-3.11", "web"]
+
+[nix]
+channel = "stable-24_05"
+
+run = "python3 main.py"
+
+[[ports]]
+localPort = 3000
+externalPort = 80
