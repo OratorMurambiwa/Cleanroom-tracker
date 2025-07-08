@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard | Cleanroom Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    .font-playfair {
+      font-family: 'Playfair Display', serif;
+    }
+    .font-inter {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+<body class="min-h-screen font-inter font-semibold flex flex-col bg-[#f4f1f0] text-gray-800 animate-fade-in">
+
+  <!-- Top Bar -->
+  <header class="bg-[#fcfbfa] shadow-md px-6 py-4 flex justify-between items-center transition-all duration-500 ease-in-out">
+    <h1 class="text-2xl font-playfair text-[#a51c30]">Dashboard</h1>
+    <div class="flex gap-4">
+      <!-- Calendar Icon -->
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-[#a51c30] hover:text-red-700 cursor-pointer transition-transform duration-300 hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke-width="2"/>
+        <line x1="16" y1="2" x2="16" y2="6" stroke-width="2"/>
+        <line x1="8" y1="2" x2="8" y2="6" stroke-width="2"/>
+        <line x1="3" y1="10" x2="21" y2="10" stroke-width="2"/>
+      </svg>
+      <!-- Settings Icon -->
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-[#a51c30] hover:text-red-700 cursor-pointer transition-transform duration-300 hover:rotate-12">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.01c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.011 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.011 2.573c.94 1.543-.827 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.012c-.426 1.755-2.924 1.755-3.35 0a1.724 1.724 0 00-2.572-1.011c-1.544.94-3.31-.827-2.37-2.37a1.724 1.724 0 00-1.012-2.573c-1.755-.426-1.755-2.924 0-3.35a1.724 1.724 0 001.012-2.572c-.94-1.544.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.01z" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+      <!-- Profile Icon -->
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-[#a51c30] hover:text-red-700 cursor-pointer transition-transform duration-300 hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <circle cx="12" cy="8" r="4" stroke-width="2"/>
+        <path d="M6 20c0-3.3137 2.6863-6 6-6s6 2.6863 6 6" stroke-width="2"/>
+      </svg>
+    </div>
+  </header>
+
+  <!-- Main Layout -->
+  <main class="flex flex-1 min-h-0">
+
+    <!-- Sidebar -->
+    <aside class="w-1/5 bg-[#faf9f9] border-r border-gray-300 p-6">
+      <nav class="flex flex-col gap-4">
+        <a href="#" class="flex items-center gap-3 text-gray-800 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] hover:translate-x-1 transition-all">
+          <span>📁</span> <span>Projects</span>
+        </a>
+        <a href="#" class="flex items-center gap-3 text-gray-800 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] hover:translate-x-1 transition-all">
+          <span>📝</span> <span>My Tasks</span>
+        </a>
+        <a href="#" class="flex items-center gap-3 text-gray-800 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] hover:translate-x-1 transition-all">
+          <span>🔧</span> <span>Components</span>
+        </a>
+        <a href="#" class="flex items-center gap-3 text-gray-800 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] hover:translate-x-1 transition-all">
+          <span>💬</span> <span>Messages</span>
+        </a>
+        <a href="#" class="flex items-center gap-3 text-gray-800 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] hover:translate-x-1 transition-all">
+          <span>🚨</span> <span>Alerts</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Dashboard Content -->
+    <section class="flex-1 p-6 grid grid-cols-3 gap-6">
+
+      <!-- Active Projects -->
+      <div class="bg-white border-t border-[#e7c2c4] shadow rounded-xl p-4 col-span-2 transition-all hover:shadow-lg">
+        <h2 class="text-lg font-playfair mb-2 text-[#a51c30]">Active Projects</h2>
+        <p class="text-sm mb-1 text-gray-700">LCLS-II-HE Assembly</p>
+        <div class="w-full bg-gray-200 h-4 rounded-full overflow-hidden mb-4">
+          <div class="bg-black h-4 text-white text-xs text-center" style="width: 85%;">85%</div>
+        </div>
+
+        <h3 class="text-md font-playfair mb-2 text-[#a51c30]">Components</h3>
+        <p class="text-sm mb-1 text-gray-700">Ion Pump</p>
+        <div class="w-full bg-gray-200 h-4 rounded-full overflow-hidden">
+          <div class="bg-black h-4 text-white text-xs text-center" style="width: 60%;">60%</div>
+        </div>
+      </div>
+
+      <!-- Reminders -->
+      <div class="bg-white border-t border-[#e7c2c4] shadow rounded-xl p-4 transition-all hover:shadow-lg">
+        <h2 class="text-lg font-playfair text-[#a51c30]">Reminders</h2>
+        <ul class="list-disc pl-5 text-sm mt-2 text-gray-700">
+          <li>Check cleanroom logs</li>
+          <li>Update status board</li>
+        </ul>
+      </div>
+
+      <!-- Ask Lei -->
+      <div class="bg-white border-t border-[#e7c2c4] shadow rounded-xl p-4 col-span-2 transition-all hover:shadow-lg">
+        <h2 class="text-base font-playfair text-[#a51c30] mb-1">🤖 Ask Lei</h3>
+        <p class="text-sm text-gray-600 mb-2">Hi, which project do you need help with?</p>
+        <div class="flex gap-2">
+          <input type="text" class="flex-1 border border-gray-300 rounded-full px-3 py-1 text-sm focus:ring-2 focus:ring-[#a51c30] focus:outline-none transition hover:scale-[1.02]" placeholder="Enter your question..." />
+          <button class="bg-[#a51c30] text-white px-4 py-1.5 text-sm rounded-full hover:bg-red-700 transition hover:scale-105">&rarr;</button>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div class="bg-white border-t border-[#e7c2c4] shadow rounded-xl p-4 transition-all hover:shadow-lg">
+        <h2 class="text-lg font-playfair text-[#a51c30] mb-2">Recent Messages</h2>
+        <p class="text-sm text-gray-600">No new messages.</p>
+      </div>
+
+    </section>
+  </main>
+
+</body>
+</html>

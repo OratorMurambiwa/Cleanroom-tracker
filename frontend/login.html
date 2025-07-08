@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login | Cleanroom Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    .font-playfair { font-family: 'Playfair Display', serif; }
+    .font-inter { font-family: 'Inter', sans-serif; }
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in { animation: fade-in 0.6s ease-out; }
+  </style>
+</head>
+<body class="min-h-screen font-inter flex items-center justify-center bg-gradient-to-br from-[#f4e7e5] to-[#f0d9d6]">
+
+  <div class="bg-white p-8 rounded-xl shadow-lg border border-[#e7c2c4] w-full max-w-md animate-fade-in">
+    <h1 class="text-2xl font-playfair text-[#a51c30] mb-6 text-center">Cleanroom Tracker Login</h1>
+
+    <form class="space-y-4">
+      <div>
+        <label class="block text-sm font-semibold mb-1 text-[#a51c30]">Username</label>
+        <input type="text" placeholder="Enter username" class="w-full px-4 py-2 border border-[#e7c2c4] rounded-md focus:ring-2 focus:ring-[#a51c30] focus:outline-none" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold mb-1 text-[#a51c30]">Password</label>
+        <input type="password" placeholder="Enter password" class="w-full px-4 py-2 border border-[#e7c2c4] rounded-md focus:ring-2 focus:ring-[#a51c30] focus:outline-none" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold mb-1 text-[#a51c30]">Role</label>
+        <select class="w-full px-4 py-2 border border-[#e7c2c4] rounded-md focus:ring-2 focus:ring-[#a51c30] focus:outline-none">
+          <option value="technician">Technician</option>
+          <option value="projectLead">Project Lead</option>
+        </select>
+      </div>
+
+      <button type="submit" class="w-full bg-[#a51c30] text-white py-2 rounded-md hover:bg-red-700 transition">Login</button>
+    </form>
+  </div>
+
+</body>
+</html>
