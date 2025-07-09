@@ -8,3 +8,7 @@ run = "python3 main.py"
 [[ports]]
 localPort = 3000
 externalPort = 80
+
+[[ports]]
+localPort = 8000
+externalPort = 8000

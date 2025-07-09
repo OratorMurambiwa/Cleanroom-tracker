@@ -24,7 +24,7 @@ SECRET_KEY = 'django-insecure-dpy9rka(9ln$#a$4#-278gh!tkixtxkvy)ihw#0_-dg3)8brv$
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -119,3 +119,10 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.replit.dev", "https://*.repl.co",
+    "https://3c019d90-ac0d-48d6-b8d8-fad180ef4c2b-00-1rs0ro3hcaxgx.riker.replit.dev:8000"
+]
+
+#python manage.py runserver 0.0.0.0:8000
