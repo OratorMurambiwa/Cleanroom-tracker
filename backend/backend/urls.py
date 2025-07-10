@@ -20,5 +20,9 @@ from tracker import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', views.custom_login_view, name='custom_login'),
     path('tasks/', views.tasks_view, name='tasks'),
+    path('dashboard/', views.role_based_redirect, name='dashboard'),
+    path('lead-dashboard/', views.lead_dashboard, name='lead_dashboard'),
+    path('tech-dashboard/', views.tech_dashboard, name='tech_dashboard'),
 ]
