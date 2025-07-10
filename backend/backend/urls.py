@@ -25,4 +25,6 @@ urlpatterns = [
     path('dashboard/', views.role_based_redirect, name='dashboard'),
     path('lead-dashboard/', views.lead_dashboard, name='lead_dashboard'),
     path('tech-dashboard/', views.tech_dashboard, name='tech_dashboard'),
+    path('submit_task/<int:task_id>/', views.submit_task, name='submit_task'),
+    path('approve_task/<int:task_id>/', views.approve_task, name='approve_task')
 ]

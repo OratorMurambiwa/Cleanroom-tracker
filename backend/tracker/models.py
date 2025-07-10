@@ -37,7 +37,7 @@ class Task(models.Model):
   description = models.TextField(blank=True)
   project = models.ForeignKey(
     Project,
-    on_delete=models.SET_NULL,
+    on_delete=models.CASCADE, related_name= 'tasks',
     null=True,
     blank=True
   )
