@@ -1,14 +1,20 @@
-import http.server
-import socketserver
+
 import os
+import sys
 
-PORT = 3000
+# Add the backend directory to Python path
+sys.path.append('backend')
 
-os.chdir("frontend")
+# Change to backend directory
+os.chdir('backend')
 
-Handler = http.server.SimpleHTTPRequestHandler
+# Set Django settings module
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 
-with socketserver.TCPServer(("", PORT), Handler) as httpd:
-  print("Serving at port", PORT)
-  httpd.serve_forever()
-  
+# Run Django development server
+import django
+from django.core.management import execute_from_command_line
+
+if __name__ == '__main__':
+    django.setup()
+    execute_from_command_line(['manage.py', 'runserver', '0.0.0.0:5000'])

@@ -13,3 +13,15 @@ externalPort = 80
 localPort = 8000
 externalPort = 8000
 exposeLocalhost = true
+
+[workflows]
+runButton = "Run Django Server"
+
+[[workflows.workflow]]
+name = "Run Django Server"
+author = 44769858
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python main.py"
