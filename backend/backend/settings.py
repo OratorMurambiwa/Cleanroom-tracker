@@ -126,3 +126,6 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 #python manage.py runserver 0.0.0.0:8000
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'

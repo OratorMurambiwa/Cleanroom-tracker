@@ -102,21 +102,41 @@
               <option>Priority</option>
             </select>
           </div>
-          <ul class="space-y-2">
-            <li class="flex justify-between items-center bg-[#fdfdfd] border border-[#e7c2c4] rounded p-2">
-              <span class="text-sm truncate">Check temperature of system</span>
-              <div class="flex gap-2 items-center">
-                <input type="checkbox" class="form-checkbox text-[#a51c30]">
-                <a href="#" class="text-xs text-[#a51c30] underline">notes</a>
+            <h2 class="text-xl font-bold text-[#a51c30] mb-2">{{ project.name }}</h2>
+            <p class="text-sm text-gray-600 mb-4">{{ project.description }}</p>
+
+            <div class="w-full bg-gray-200 h-4 rounded-full overflow-hidden mb-4">
+              <div class="bg-green-600 h-4 text-white text-xs text-center" style="width: {{ project.progress }}%;">
+                {{ project.progress|floatformat:0 }}%
               </div>
-            </li>
-            <li class="flex justify-between items-center bg-[#fdfdfd] border border-[#e7c2c4] rounded p-2">
-              <span class="text-sm truncate">Test component 3 connections</span>
-              <div class="flex gap-2 items-center">
-                <input type="checkbox" class="form-checkbox text-[#a51c30]">
-                <a href="#" class="text-xs text-[#a51c30] underline">notes</a>
-              </div>
-            </li>
+            </div>
+
+            <ul class="space-y-2">
+              {% for task in tasks %}
+                <li class="flex justify-between items-center bg-[#fdfdfd] border border-[#e7c2c4] rounded p-2">
+                  <span class="text-sm truncate">{{ task.title }}</span>
+                  <div class="flex gap-2 items-center">
+                    {% if task.is_completed %}
+                      ✅
+                    {% else %}
+                      ⏳
+                    {% endif %}
+
+                    {% if task.is_approved %}
+                      <span class="text-xs text-green-600 font-semibold">Approved</span>
+                    {% elif task.is_completed %}
+                      <form method="POST" action="{% url 'approve_task' task.id %}">
+                        {% csrf_token %}
+                        <button class="text-xs text-white bg-green-600 px-2 py-1 rounded">Approve</button>
+                      </form>
+                    {% endif %}
+                  </div>
+                </li>
+              {% empty %}
+                <li class="text-sm text-gray-500">No tasks found.</li>
+              {% endfor %}
+            </ul>
+
           </ul>
           <div class="mt-6 min-h-[300px]"></div>
         </div>

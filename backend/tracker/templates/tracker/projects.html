@@ -73,13 +73,13 @@
         </nav>
       </aside>
 
-    <!-- Projects Content -->
-    <section class="flex-1 p-6 grid grid-cols-3 gap-6">
+      <!-- Projects Content -->
+      <section class="flex-1 p-6 grid grid-cols-3 gap-6">
 
         <!-- Active Projects Section -->
         <div class="col-span-2 bg-white p-4 rounded-xl shadow border border-gray-200">
           <h2 class="text-lg font-bold mb-4 text-[#a51c30]">Active Projects</h2>
-  
+
           <!-- Filter Section -->
           <div class="mb-6 flex flex-col md:flex-row gap-4 items-center animate-fade-in">
             <select class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#a51c30]">
@@ -92,36 +92,45 @@
             <input type="date" class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#a51c30]" />
             <button class="text-sm px-4 py-2 bg-[#a51c30] text-white rounded hover:bg-red-700 transition">Reset</button>
           </div>
-  
+
           <div class="border border-gray-800 rounded-md px-3 py-2 flex items-center gap-2 mb-4">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input type="text" placeholder="Search projects..." class="w-full outline-none text-sm"/>
           </div>
-  
+
           <!-- Project Cards -->
-        <div class="flex flex-col gap-4">
-            <div class="bg-[#fafafa] rounded-lg border border-[#e7c2c4] p-4 shadow-sm hover:shadow-md transition duration-300">
-              <h3 class="text-sm font-semibold text-gray-900 mb-2">LCLS-II-HE Assembly</h3>
-              <div class="w-full bg-gray-200 h-4 rounded-full overflow-hidden">
-                <div class="bg-black h-4 text-white text-xs text-center" style="width: 85%">85%</div>
-              </div>
-            </div>
-            <div class="bg-[#fafafa] rounded-lg border border-[#e7c2c4] p-4 shadow-sm hover:shadow-md transition duration-300">
-              <h3 class="text-sm font-semibold text-gray-900 mb-2">Vacuum Chamber Build</h3>
-              <div class="w-full bg-gray-200 h-4 rounded-full overflow-hidden">
-                <div class="bg-black h-4 text-white text-xs text-center" style="width: 60%">60%</div>
-              </div>
-            </div>
-            <div class="bg-[#fafafa] rounded-lg border border-[#e7c2c4] p-4 shadow-sm hover:shadow-md transition duration-300">
-              <h3 class="text-sm font-semibold text-gray-900 mb-2">Beamline Testing</h3>
-              <div class="w-full bg-gray-200 h-4 rounded-full overflow-hidden">
-                <div class="bg-black h-4 text-white text-xs text-center" style="width: 40%">40%</div>
-              </div>
-            </div>
+          <div class="flex flex-col gap-4">
+            {% for project in projects %}
+              <a href="{% url 'project_detail' project.id %}" class="block">
+                <div class="bg-[#fafafa] rounded-lg border border-[#e7c2c4] p-4 shadow-sm hover:shadow-md transition duration-300">
+                  <h3 class="text-sm font-semibold text-gray-900 mb-2">{{ project.name }}</h3>
+                  <div class="w-full bg-gray-200 h-4 rounded-full overflow-hidden">
+                    <div class="bg-black h-4 text-white text-xs text-center" style="width: {{ project.progress }}%;">
+                      {{ project.progress|floatformat:0 }}%
+                    </div>
+                  </div>
+                </div>
+              </a>
+            {% empty %}
+              <p class="text-sm text-gray-600">No projects found.</p>
+            {% endfor %}
           </div>
         </div>
+
+        <!-- Ask Lei / Help Section -->
+        <div class="bg-white p-6 rounded-xl shadow border border-[#e0cfcf]">
+          <h2 class="text-lg font-bold text-[#a51c30] flex items-center gap-2">🤖 Ask Lei</h2>
+          <p class="text-sm text-gray-700 mt-2">Hi, which project do you need help with?</p>
+          <div class="flex gap-2 mt-4">
+            <input type="text" class="flex-1 border border-gray-300 rounded-full px-3 py-1 text-sm focus:ring-2 focus:ring-[#a51c30] focus:outline-none transition" placeholder="Enter text here..." />
+            <button class="bg-[#a51c30] text-white px-4 py-1.5 text-sm rounded-full hover:bg-red-700 transition">&rarr;</button>
+          </div>
+        </div>
+      </section>
+
+
       <!-- Ask Lei / Help Section -->
       <div class="bg-white p-6 rounded-xl shadow border border-[#e0cfcf]">
         <h2 class="text-lg font-bold text-[#a51c30] flex items-center gap-2">

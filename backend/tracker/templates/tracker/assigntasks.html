@@ -85,60 +85,69 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
 <!-- Assign Task -->
-<div class="bg-white rounded-xl shadow border border-[#e7c2c4] p-6 flex flex-col h-[540px] justify-between">
-    <div class="flex flex-col space-y-4 flex-grow">
-      <h2 class="text-md font-bold text-[#a51c30]">Assign New Task</h2>
-      
-      <input type="text" placeholder="Task Title" class="w-full border border-[#e7c2c4] rounded-md px-3 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#a51c30]">
-  
-      <textarea rows="6" placeholder="Task Description" class="w-full border border-[#e7c2c4] rounded-md px-3 py-8 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#a51c30]"></textarea>
-  
-      <!-- New Section: Select Project and Component -->
-      <div class="flex gap-4">
-        <select class="w-1/2 border border-[#e7c2c4] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#a51c30]">
-          <option>Select Project</option>
-          <option>Airflow Monitoring</option>
-          <option>Ventilation Check</option>
-          <option>Cleanroom Upgrade</option>
-        </select>
-        <select class="w-1/2 border border-[#e7c2c4] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#a51c30]">
-          <option>Select Component</option>
-          <option>Sensor Module A</option>
-          <option>Valve B2</option>
-          <option>Filtration Unit C</option>
-        </select>
-      </div>
-  
-      <div class="flex gap-4">
-        <select class="w-1/2 border border-[#e7c2c4] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#a51c30]">
-          <option>Select Technician</option>
-          <option>Jane Doe</option>
-          <option>John Smith</option>
-        </select>
-        <input type="date" class="w-1/2 border border-[#e7c2c4] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#a51c30]">
-      </div>
-    </div>
-  
-    <div class="pt-4">
-      <button type="submit" class="w-full bg-[#a51c30] text-white px-6 py-2 rounded-md hover:bg-red-700 transition">Assign Task</button>
-    </div>
-  </div>
+        <form method="POST" class="flex flex-col space-y-4 flex-grow">
+          {% csrf_token %}
+          <input type="text" name="title" placeholder="Task Title" class="...">
+
+          <textarea name="description" rows="6" placeholder="Task Description" class="..."></textarea>
+
+          <div class="flex gap-4">
+            <select name="project" class="w-1/2 ...">
+              <option value="">Select Project</option>
+              {% for project in projects %}
+                <option value="{{ project.id }}">{{ project.name }}</option>
+              {% endfor %}
+            </select>
+
+            <select name="component" class="w-1/2 ...">
+              <option value="">Select Component</option>
+              {% for comp in components %}
+                <option value="{{ comp.id }}">{{ comp.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="flex gap-4">
+            <select name="technician" class="w-1/2 ...">
+              <option value="">Select Technician</option>
+              {% for tech in technicians %}
+                <option value="{{ tech.id }}">{{ tech.username }}</option>
+              {% endfor %}
+            </select>
+            <input type="date" name="due_date" class="w-1/2 ...">
+          </div>
+
+          <div class="pt-4">
+            <button type="submit" class="w-full bg-[#a51c30] text-white px-6 py-2 rounded-md hover:bg-red-700 transition">Assign Task</button>
+          </div>
+        </form>
+
   
 
     <!-- Approve Completed Tasks -->
     <div class="bg-white rounded-xl shadow border border-[#e7c2c4] p-6 max-h-[620px] overflow-y-auto">
         <h2 class="text-md font-bold text-[#a51c30] mb-4">Approve Completed Tasks</h2>
-        <ul class="space-y-2">
-        <li class="flex justify-between items-center bg-[#fdfdfd] border border-[#e7c2c4] rounded-md p-3">
+      <ul class="space-y-2">
+        {% for task in pending_tasks %}
+          <li class="flex justify-between items-center bg-[#fdfdfd] border border-[#e7c2c4] rounded-md p-3">
             <div>
-            <p class="text-sm font-semibold">Calibrate sensor array</p>
-            <p class="text-xs text-gray-500">Assigned to: Jane Doe</p>
-            <p class="text-xs text-gray-500">Project: Airflow Monitoring</p>
-            <p class="text-xs text-gray-500">Component: Sensor Module A</p>
+              <p class="text-sm font-semibold">{{ task.title }}</p>
+              <p class="text-xs text-gray-500">Assigned to: {{ task.assigned_to.username }}</p>
+              <p class="text-xs text-gray-500">Project: {{ task.project.name }}</p>
+              {% if task.component %}
+                <p class="text-xs text-gray-500">Component: {{ task.component.name }}</p>
+              {% endif %}
             </div>
-            <button class="bg-green-600 text-white px-4 py-1 text-sm rounded-md hover:bg-green-700">Approve</button>
-        </li>
-        </ul>
+            <form method="POST" action="{% url 'approve_task' task.id %}">
+              {% csrf_token %}
+              <button class="bg-green-600 text-white px-4 py-1 text-sm rounded-md hover:bg-green-700">Approve</button>
+            </form>
+          </li>
+        {% empty %}
+          <li class="text-sm text-gray-500">No tasks pending approval.</li>
+        {% endfor %}
+      </ul>
+
     </div>
 
       </div>

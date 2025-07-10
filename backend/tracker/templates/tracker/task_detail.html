@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Task Detail</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#fdf8f6] min-h-screen font-inter p-8">
+
+  <div class="max-w-3xl mx-auto bg-white border border-[#e7c2c4] rounded-lg p-6 shadow">
+    <h1 class="text-2xl font-bold text-[#a51c30] mb-2">{{ task.title }}</h1>
+    <p class="text-sm text-gray-700 mb-4">{{ task.description }}</p>
+
+    <p class="text-sm"><strong>Status:</strong>
+      {% if task.is_approved %}
+        <span class="text-green-600 font-semibold">Approved</span>
+      {% elif task.is_completed %}
+        <span class="text-yellow-600 font-semibold">Completed (Pending Approval)</span>
+      {% else %}
+        <span class="text-gray-600">Pending</span>
+      {% endif %}
+    </p>
+
+    <hr class="my-4">
+
+    {% if task.notes %}
+      <div class="mb-4">
+        <h2 class="text-md font-semibold text-[#a51c30]">Technician Notes</h2>
+        <p class="text-sm text-gray-800">{{ task.notes }}</p>
+      </div>
+    {% endif %}
+
+    {% if task.image %}
+      <div class="mb-4">
+        <h2 class="text-md font-semibold text-[#a51c30]">Uploaded Image</h2>
+        <img src="{{ task.image.url }}" alt="Task Upload" class="rounded w-full max-w-sm border mt-2">
+      </div>
+    {% endif %}
+
+    <a href="{% url 'tech_tasks' %}" class="inline-block bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300 transition mt-4">← Back to My Tasks</a>
+    
+    {% if user.groups.all.0.name == "lead" %}
+      <a href="{% url 'edit_task' task.id %}" class="inline-block bg-[#a51c30] text-white px-4 py-2 rounded hover:bg-red-700 transition mt-2 ml-4">
+        ✏️ Edit Task
+      </a>
+    {% endif %}
+
+  </div>
+
+</body>
+</html>

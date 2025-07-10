@@ -103,10 +103,25 @@
             </div>
             <ul class="space-y-2">
               <li class="flex justify-between items-center bg-[#fdfdfd] border border-[#e7c2c4] rounded p-2">
-                <span class="text-sm truncate">Check temperature of system</span>
-                <div class="flex gap-2 items-center">
-                  <input type="checkbox" class="form-checkbox text-[#a51c30]">
-                  <a href="#" class="text-xs text-[#a51c30] underline">notes</a>
+                {% if task.id %}
+                  <a href="{% url 'task_detail' task.id %}" class="text-sm font-semibold text-[#a51c30] 
+                    hover:underline">
+                    {{ task.title }}
+                  </a>
+                {% else %}
+                  <span class="text-sm font-semibold text-gray-500">
+                    {{ task.title }} (Unassigned)
+                  </span>
+                {% endif %}
+
+
+                    <div class="hidden mt-2">
+                      <textarea name="notes" placeholder="Add notes..." class="text-sm border rounded px-2 py-1 w-full"></textarea>
+                      <input type="file" name="image" class="text-sm mt-1">
+                      <button type="submit" class="text-xs mt-1 bg-[#a51c30] text-white px-2 py-1 rounded">Submit</button>
+                    </div>
+                  </form>
+
                 </div>
               </li>
               <li class="flex justify-between items-center bg-[#fdfdfd] border border-[#e7c2c4] rounded p-2">
