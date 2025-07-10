@@ -37,12 +37,12 @@ def custom_login_view(request):
 
             if role == 'projectlead':
                 group = Group.objects.get(name='lead')
-                user.groups.set(group)
+                user.groups.set([group])
                 return redirect('lead_dashboard')
 
             elif role == 'technician':
                 group = Group.objects.get(name='technician')
-                user.groups.set(group)
+                user.groups.set([group])
                 return redirect('tech_dashboard')
 
             else:
