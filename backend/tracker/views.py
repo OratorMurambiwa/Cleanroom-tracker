@@ -42,7 +42,7 @@ def lead_dashboard(request):
     pending_tasks = Task.objects.filter(completed=True, is_approved=False)
     components = Component.objects.all()  
 
-    return render(request, 'tracker/lead_dashboard.html', {
+    return render(request, 'tracker/leaddashboard.html', {
         'projects': projects,
         'pending_tasks': pending_tasks,
         'components': components,  
