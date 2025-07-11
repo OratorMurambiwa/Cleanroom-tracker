@@ -21,6 +21,7 @@ class Component(models.Model):
   description = models.TextField(blank=True)
   start_date = models.DateField(null=True, blank=True)
   end_date = models.DateField(null=True, blank=True)
+  progress = models.FloatField(default=0.0)
   status = models.CharField(
     max_length=20,
     choices=[('ongoing', 'Ongoing'), ('completed', 'Completed'),

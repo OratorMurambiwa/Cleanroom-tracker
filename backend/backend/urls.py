@@ -21,6 +21,16 @@ urlpatterns = [
     path('my-tasks/', views.tech_task_list, name='tech_tasks'),
     path('tasks/<int:task_id>/', views.task_detail_view, name='task_detail'),
     path('tasks/<int:task_id>/edit/', views.edit_task_view, name='edit_task'),
+    path('create_project/', views.create_project_view, name='create_project'),
+    path('create_component/', views.create_component_view, name='create_component'),
+    path('components/<int:component_id>/edit/', views.edit_component, 
+         name='edit_component'),
+    path('components/<int:component_id>/delete/', views.delete_component, 
+         name='delete_component'),
+    path('components/', views.components_view, name='components'),
+    path('components/<int:component_id>/reassign-task/', 
+         views.reassign_tasks_to_component, 
+         name='reassign_tasks_to_component'),
     path('projects/', views.project_list_view, name='project_list')
 ]
 

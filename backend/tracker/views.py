@@ -5,6 +5,9 @@ from django.contrib.auth.models import Group
 from .models import Task, Project, Component
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import user_passes_test
+from django.contrib import messages
+from .forms import ProjectForm
+from .forms import ComponentForm    
 
 
 def update_project_progress(project):
@@ -35,7 +38,15 @@ def tasks_view(request):
 
 @login_required
 def lead_dashboard(request):
-    return render(request, 'tracker/leaddashboard.html')
+    projects = Project.objects.all()
+    pending_tasks = Task.objects.filter(is_completed=True, is_approved=False)
+    components = Component.objects.all()  
+
+    return render(request, 'tracker/lead_dashboard.html', {
+        'projects': projects,
+        'pending_tasks': pending_tasks,
+        'components': components,  
+    })
 
 
 @login_required
@@ -85,10 +96,23 @@ def submit_task(request, task_id):
 @login_required
 def approve_task(request, task_id):
     task = get_object_or_404(Task, id=task_id)
-    task.is_approved = True
-    task.save()
-    update_project_progress(task.project)
+    if request.method == 'POST':
+        task.is_approved = True
+        task.save()
+
+        # Update project progress if task is linked to a project
+        if task.project:
+            update_project_progress(task.project)
+
+        # Update component progress if task is linked to a component
+        if task.component:
+            update_component_progress(task.component)
+
+        # Add toast/flash message
+        messages.success(request, f"Task '{task.title}' has been approved.")
+
     return redirect('lead_dashboard')
+
 
 @login_required
 def project_list_view(request):
@@ -120,7 +144,7 @@ def assign_tasks_view(request):
         technician_id = request.POST.get('technician')
         due_date = request.POST.get('due_date')
 
-        project = Project.objects.get(id=project_id)
+        project = Project.objects.get(id=project_id) if project_id else None
         component = Component.objects.get(id=component_id) if component_id else None
         technician = User.objects.get(id=technician_id)
 
@@ -194,3 +218,83 @@ def edit_task_view(request, task_id):
         'task': task,
         'technicians': technicians
     })
+#project creation by lead
+@login_required
+def create_project_view(request):
+    if request.method == 'POST':
+        form = ProjectForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('lead_dashboard')
+        else:
+            form = ProjectForm()
+    return render(request, 'tracker/create_project.html', {'form': form})
+
+#create component by lead
+@login_required
+def create_component_view(request):
+    if request.method == 'POST':
+        form = ComponentForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('lead_dashboard')
+        else:
+            form = ComponentForm()
+        return render(request, 'tracker/create_component.html', {'form': form})
+
+@login_required
+def components_view(request):
+    components = Component.objects.all()
+    return render(request, 'components.html', {'components': components})
+
+def update_component_progress(component):
+    tasks = Task.objects.filter(component=component)
+    if tasks.exists():
+        approved = tasks.filter(is_approved=True).count()
+        total = tasks.count()
+        progress = (approved / total) * 100
+        component.progress = progress
+        component.save()
+
+
+@login_required
+def edit_component(request, component_id):
+    component = get_object_or_404(Component, id=component_id)
+    form = ComponentForm(request.POST or None, instance=component)
+
+    # Get all tasks not yet assigned to a component or already linked to this one
+    unlinked_tasks = Task.objects.filter(component__isnull=True) | Task.objects.filter(component=component)
+
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, "Component updated.")
+        return redirect('lead_dashboard')
+
+    return render(request, 'tracker/edit_component.html', {
+        'form': form,
+        'component': component,
+        'unlinked_tasks': unlinked_tasks,
+    })
+
+
+@login_required
+def delete_component(request, component_id):
+    component = get_object_or_404(Component, id=component_id)
+    if request.method == 'POST':
+        component_name = component.name
+        component.delete()
+        messages.success(request, f"Component '{component_name}' was deleted.")
+    return redirect('lead_dashboard')
+
+@login_required
+def reassign_tasks_to_component(request, component_id):
+    component = get_object_or_404(Component, id=component_id)
+
+    if request.method == 'POST':
+        task_id = request.POST.get('task_id')
+        task = get_object_or_404(Task, id=task_id)
+        task.component = component
+        task.save()
+        messages.success(request, f"Task '{task.title}' has been linked to component '{component.name}'.")
+
+    return redirect('edit_component', component_id=component.id)
