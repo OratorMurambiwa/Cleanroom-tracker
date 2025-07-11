@@ -238,9 +238,9 @@ def create_component_view(request):
         if form.is_valid():
             form.save()
             return redirect('lead_dashboard')
-        else:
-            form = ComponentForm()
-        return render(request, 'tracker/create_component.html', {'form': form})
+    else:
+        form = ComponentForm()
+    return render(request, 'tracker/create_component.html', {'form': form})
 
 @login_required
 def components_view(request):
