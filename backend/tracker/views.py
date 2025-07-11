@@ -39,7 +39,7 @@ def tasks_view(request):
 @login_required
 def lead_dashboard(request):
     projects = Project.objects.all()
-    pending_tasks = Task.objects.filter(is_completed=True, is_approved=False)
+    pending_tasks = Task.objects.filter(completed=True, is_approved=False)
     components = Component.objects.all()  
 
     return render(request, 'tracker/lead_dashboard.html', {
