@@ -4,6 +4,7 @@ modules = ["python-3.11", "web"]
 channel = "stable-24_05"
 
 run = "python3 main.py"
+packages = ["sqlite-interactive"]
 
 [[ports]]
 localPort = 3000

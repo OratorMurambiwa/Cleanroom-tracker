@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Calendar | Cleanroom Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js"></script>
+</head>
+<body class="bg-[#fdf8f6] font-inter p-8">
+
+  <h1 class="text-2xl text-[#a51c30] font-bold mb-4">📅 Calendar & Reminders</h1>
+
+  <!-- Calendar -->
+  <div id="calendar" class="bg-white p-4 rounded shadow border border-[#e7c2c4]"></div>
+
+  <!-- Reminder Form -->
+  <form method="POST" action="{% url 'create_reminder' %}" class="mt-6 bg-white p-4 rounded shadow border border-[#e7c2c4] max-w-xl">
+    {% csrf_token %}
+    <h2 class="text-lg text-[#a51c30] font-semibold mb-2">Set a New Reminder</h2>
+    <input type="text" name="title" placeholder="Reminder Title" required class="w-full px-3 py-2 border rounded mb-3">
+    <input type="datetime-local" name="reminder_time" required class="w-full px-3 py-2 border rounded mb-3">
+    <textarea name="note" rows="3" placeholder="Optional Note" class="w-full px-3 py-2 border rounded mb-3"></textarea>
+    <button type="submit" class="bg-[#a51c30] text-white px-4 py-2 rounded hover:bg-red-700">Add Reminder</button>
+  </form>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const calendarEl = document.getElementById('calendar');
+      const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        height: 600,
+        events: [
+          // Tasks from Django passed as JSON
+          {% for task in tasks %}
+          {
+            title: "{{ task.title|escapejs }}",
+            start: "{{ task.due_date|date:'Y-m-d' }}",
+            color: "{% if task.is_completed %}green{% elif task.due_date < today %}red{% else %}orange{% endif %}",
+            url: "{% url 'task_detail' task.id %}"
+          },
+          {% endfor %}
+          {% for reminder in reminders %}
+          {
+            title: "🔔 {{ reminder.title|escapejs }}",
+            start: "{{ reminder.reminder_time|date:'Y-m-d\\TH:i:s' }}",
+            color: "blue"
+          },
+          {% endfor %}
+        ],
+      });
+      calendar.render();
+    });
+  </script>
+
+</body>
+</html>

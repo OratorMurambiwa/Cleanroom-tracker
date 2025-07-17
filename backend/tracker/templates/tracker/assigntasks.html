@@ -25,50 +25,14 @@
 <body class="min-h-screen font-inter font-semibold flex flex-col bg-gradient-to-br from-[#f4e7e5] to-[#f0d9d6] text-gray-800 overflow-hidden">
 
   <!-- Top Bar -->
-  <header class="bg-[#fcfbfa] shadow-md px-6 py-4 flex justify-between items-center transition-all duration-500 
-    ease-in-out">
+  <header class="bg-[#fcfbfa] shadow-md px-6 py-4 flex justify-between items-center transition-all duration-500 ease-in-out">
     <h1 class="text-2xl font-playfair text-[#a51c30]">Dashboard</h1>
     <div class="flex items-center gap-6">
-      <!-- Calendar Icon -->
-      <a href = "calendar.html" class = "hover:text-[#a51c30] transition-tranform duration-300 hover:scale-110 ">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-[#a51c30] hover:text-red-700 cursor-pointer 
-          transition-transform duration-
-          300 hover:scale-110" fill="none"     viewBox="0 0 24 24" stroke="currentColor">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke-width="2"/>
-          <line x1="16" y1="2" x2="16" y2="6" stroke-width="2"/>
-          <line x1="8" y1="2" x2="8" y2="6" stroke-width="2"/>
-          <line x1="3" y1="10" x2="21" y2="10" stroke-width="2"/>
-        </svg>
-      </a>
-
-      <!-- Settings Icon -->
-      <a href = "settings.html" class = "hover:text-[#a51c30] transition-tranform duration-300 hover:scale-110 ">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" 
-          stroke="currentColor" class="w-6 h-6 text-
-          [#a51c30] hover:text-red-700 cursor-pointer transition-transform duration-300 hover:rotate-12">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 
-            0a1.724 1.724 0 002.573 
-            1.01c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.011 2.572c1.756.426 1.756 2.924 0 3.35a1.724 
-            1.724 0 00-1.011 2.573c.94 
-            1.543-.827 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.012c-.426 1.755-2.924 1.755-3.35 0a1.724 1.724 0 
-            00-2.572-1.011c-1.544.94-
-            3.31-.827-2.37-2.37a1.724 1.724 0 00-1.012-2.573c-1.755-.426-1.755-2.924 0-3.35a1.724 1.724 0 
-            001.012-2.572c-.94-1.544.826-3.31 
-            2.37-2.37.996.608 2.296.07 2.572-1.01z" />
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-      </a>
-
-      <!-- Profile Icon -->
-      <a href = "profile.html" class = "hover:text-[#a51c30] transition-tranform duration-300 hover:scale-110 ">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-[#a51c30] hover:text-red-700 cursor-pointer 
-          transition-transform duration-
-          300 hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <circle cx="12" cy="8" r="4" stroke-width="2"/>
-          <path d="M6 20c0-3.3137 2.6863-6 6-6s6 2.6863 6 6" stroke-width="2"/>
-        </svg>
-      </a>
-      </div>
+      <!-- Placeholder icons -->
+      <a href="calendar.html"></a>
+      <a href="settings.html"></a>
+      <a href="profile.html"></a>
+    </div>
   </header>
 
   <!-- Main Layout -->
@@ -77,40 +41,13 @@
     <!-- Sidebar -->
     <aside class="w-1/5 bg-[#faf9f9] border-r border-gray-300 p-6">
       <nav class="flex flex-col gap-4">
-        <a href="{% url 'project_detail' %}" class="flex items-center gap-3 text-gray-800 px-3 py-2 rounded-md 
-          hover:bg-[#f4e8e7] hover:text-[#a51c30] 
-          hover:translate-x-1 transition-all">
-          <span>📁</span> <span>Projects</span>
-        </a>
-        <a href="{% url 'assign_tasks' %}" class="flex items-center gap-3 text-gray-800 px-3 py-2 rounded-md 
-          hover:bg-[#f4e8e7] hover:text-[#a51c30] hover:translate-x-1 transition-all">
-          <span>📝</span> <span>Tasks</span>
-        </a>
-        <a href="{% url 'components' %}" class="flex items-center gap-3 text-gray-800 px-3 py-2 rounded-md 
-          hover:bg-[#f4e8e7] hover:text-[#a51c30] 
-          hover:translate-x-1 transition-all">
-          <span>🔧</span> <span>Components</span>
-        </a>
-        <a href="{% url 'create_project' %}" class="flex items-center gap-3 text-gray-800 px-3 py-2 rounded-md 
-          hover:bg-[#f4e8e7] hover:text-[#a51c30] 
-          hover:translate-x-1 transition-all">
-          <span>🔧</span> <span>Create Project</span>
-        </a>
-        <a href="{% url 'create_component' %}" class="flex items-center gap-3 text-gray-800 px-3 py-2 rounded-md 
-          hover:bg-[#f4e8e7] hover:text-[#a51c30] 
-          hover:translate-x-1 transition-all">
-          <span>🔧</span> <span>Create Component</span>
-        </a>
-        <a href="messages.html" class="flex items-center gap-3 text-gray-800 px-3 py-2 rounded-md hover:bg-
-          [#f4e8e7] hover:text-[#a51c30] 
-          hover:translate-x-1 transition-all">
-          <span>💬</span> <span>Messages</span>
-        </a>
-        <a href="alerts.html" class="flex items-center gap-3 text-gray-800 px-3 py-2 rounded-md hover:bg-
-          [#f4e8e7] hover:text-[#a51c30] 
-          hover:translate-x-1 transition-all">
-          <span>🚨</span> <span>Alerts</span>
-        </a>
+        <a href="{% url 'project_list' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all">📁 Projects</a>
+        <a href="{% url 'assign_tasks' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all">📝 Tasks</a>
+        <a href="{% url 'components' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all">🔧 Components</a>
+        <a href="{% url 'create_project' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all">➕ Create Project</a>
+        <a href="{% url 'create_component' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all">➕ Create Component</a>
+        <a href="messages.html" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all">💬 Messages</a>
+        <a href="alerts.html" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all">🚨 Alerts</a>
       </nav>
     </aside>
 
@@ -118,22 +55,22 @@
     <section class="flex-1 p-6 animate-fade-in pb-12">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-<!-- Assign Task -->
+        <!-- Assign Task -->
         <form method="POST" class="flex flex-col space-y-4 flex-grow">
           {% csrf_token %}
-          <input type="text" name="title" placeholder="Task Title" class="...">
+          <input type="text" name="title" placeholder="Task Title" class="border px-3 py-2 rounded-md">
 
-          <textarea name="description" rows="6" placeholder="Task Description" class="..."></textarea>
+          <textarea name="description" rows="6" placeholder="Task Description" class="border px-3 py-2 rounded-md"></textarea>
 
           <div class="flex gap-4">
-            <select name="project" class="w-1/2 ...">
+            <select name="project" class="w-1/2 border px-3 py-2 rounded-md">
               <option value="">Select Project</option>
               {% for project in projects %}
                 <option value="{{ project.id }}">{{ project.name }}</option>
               {% endfor %}
             </select>
 
-            <select name="component" class="w-1/2 ...">
+            <select name="component" class="w-1/2 border px-3 py-2 rounded-md">
               <option value="">Select Component</option>
               {% for comp in components %}
                 <option value="{{ comp.id }}">{{ comp.name }}</option>
@@ -142,13 +79,13 @@
           </div>
 
           <div class="flex gap-4">
-            <select name="technician" class="w-1/2 ...">
+            <select name="technician" class="w-1/2 border px-3 py-2 rounded-md">
               <option value="">Select Technician</option>
               {% for tech in technicians %}
                 <option value="{{ tech.id }}">{{ tech.username }}</option>
               {% endfor %}
             </select>
-            <input type="date" name="due_date" class="w-1/2 ...">
+            <input type="date" name="due_date" class="w-1/2 border px-3 py-2 rounded-md">
           </div>
 
           <div class="pt-4">
@@ -156,33 +93,30 @@
           </div>
         </form>
 
-  
-
-    <!-- Approve Completed Tasks -->
-    <div class="bg-white rounded-xl shadow border border-[#e7c2c4] p-6 max-h-[620px] overflow-y-auto">
-        <h2 class="text-md font-bold text-[#a51c30] mb-4">Approve Completed Tasks</h2>
-      <ul class="space-y-2">
-        {% for task in pending_tasks %}
-          <li class="flex justify-between items-center bg-[#fdfdfd] border border-[#e7c2c4] rounded-md p-3">
-            <div>
-              <p class="text-sm font-semibold">{{ task.title }}</p>
-              <p class="text-xs text-gray-500">Assigned to: {{ task.assigned_to.username }}</p>
-              <p class="text-xs text-gray-500">Project: {{ task.project.name }}</p>
-              {% if task.component %}
-                <p class="text-xs text-gray-500">Component: {{ task.component.name }}</p>
-              {% endif %}
-            </div>
-            <form method="POST" action="{% url 'approve_task' task.id %}">
-              {% csrf_token %}
-              <button class="bg-green-600 text-white px-4 py-1 text-sm rounded-md hover:bg-green-700">Approve</button>
-            </form>
-          </li>
-        {% empty %}
-          <li class="text-sm text-gray-500">No tasks pending approval.</li>
-        {% endfor %}
-      </ul>
-
-    </div>
+        <!-- Approve Completed Tasks -->
+        <div class="bg-white rounded-xl shadow border border-[#e7c2c4] p-6 max-h-[620px] overflow-y-auto">
+          <h2 class="text-md font-bold text-[#a51c30] mb-4">Approve Completed Tasks</h2>
+          <ul class="space-y-2">
+            {% for task in pending_tasks %}
+              <li class="flex justify-between items-center bg-[#fdfdfd] border border-[#e7c2c4] rounded-md p-3">
+                <div>
+                  <p class="text-sm font-semibold">{{ task.title }}</p>
+                  <p class="text-xs text-gray-500">Assigned to: {{ task.assigned_to.username }}</p>
+                  <p class="text-xs text-gray-500">Project: {{ task.project.name }}</p>
+                  {% if task.component %}
+                    <p class="text-xs text-gray-500">Component: {{ task.component.name }}</p>
+                  {% endif %}
+                </div>
+                <form method="POST" action="{% url 'approve_task' task.id %}">
+                  {% csrf_token %}
+                  <button class="bg-green-600 text-white px-4 py-1 text-sm rounded-md hover:bg-green-700">Approve</button>
+                </form>
+              </li>
+            {% empty %}
+              <li class="text-sm text-gray-500">No tasks pending approval.</li>
+            {% endfor %}
+          </ul>
+        </div>
 
       </div>
     </section>

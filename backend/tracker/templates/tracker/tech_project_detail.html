@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Project Details | Cleanroom Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    .font-playfair { font-family: 'Playfair Display', serif; }
+    .font-inter { font-family: 'Inter', sans-serif; }
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in { animation: fade-in 0.6s ease-out; }
+  </style>
+</head>
+<body class="min-h-screen font-inter font-semibold flex flex-col bg-gradient-to-br from-[#f4e7e5] to-[#f0d9d6] text-gray-800 overflow-hidden">
+  <header class="bg-[#fcfbfa] shadow-md px-6 py-4 flex justify-between items-center transition-all duration-500 ease-in-out">
+    <h1 class="text-2xl font-playfair text-[#a51c30]">Dashboard</h1>
+    <div class="flex items-center gap-6">
+      <a href="calendar.html" class="hover:text-[#a51c30] transition-transform duration-300 hover:scale-110"></a>
+      <a href="settings.html" class="hover:text-[#a51c30] transition-transform duration-300 hover:scale-110"></a>
+      <a href="profile.html" class="hover:text-[#a51c30] transition-transform duration-300 hover:scale-110"></a>
+    </div>
+  </header>
+  <main class="flex flex-1 min-h-0">
+    <aside class="hidden md:block w-1/5 bg-[#faf9f9] border-r border-gray-300 p-6">
+      <nav class="flex flex-col gap-4">
+        <a href="{% url 'tech_project_detail' project.id %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all"><span>📁</span><span>Projects</span></a>
+        <a href="{% url 'assign_tasks' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all"><span>📝</span><span>Tasks</span></a>
+        <a href="{% url 'components' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all"><span>🔧</span><span>Components</span></a>
+        <a href="messages.html" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all"><span>💬</span><span>Messages</span></a>
+        <a href="alerts.html" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all"><span>🚨</span><span>Alerts</span></a>
+      </nav>
+    </aside>
+    <section class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 p-6 animate-fade-in">
+      <div class="md:col-span-2 flex flex-col gap-4">
+        <div class="bg-white rounded-xl shadow border border-[#e7c2c4] p-4">
+          <div class="flex justify-between items-center mb-2">
+            <h2 class="text-md font-bold text-[#a51c30]">Task List</h2>
+          </div>
+          <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
+            <input type="text" name="search" placeholder="Search tasks..." value="{{ search_query }}" class="text-sm px-2 py-1 border border-[#e7c2c4] rounded-md focus:outline-none focus:ring-2 focus:ring-[#a51c30]" />
+            <select name="status" class="border border-[#e7c2c4] rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#a51c30]">
+              <option value="all" {% if status_filter == 'all' %}selected{% endif %}>Status: All</option>
+              <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+              <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+            </select>
+            <select name="sort" class="border border-[#e7c2c4] rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#a51c30]">
+              <option value="" {% if not sort_by %}selected{% endif %}>Sort by</option>
+              <option value="due" {% if sort_by == 'due' %}selected{% endif %}>Due Date</option>
+              <option value="priority" {% if sort_by == 'priority' %}selected{% endif %}>Priority</option>
+            </select>
+            <button type="submit" class="bg-[#a51c30] text-white px-4 py-1.5 rounded hover:bg-red-700 transition md:col-span-3">Apply Filters</button>
+          </form>
+          <h2 class="text-xl font-bold text-[#a51c30] mb-2">{{ project.name }}</h2>
+          <p class="text-sm text-gray-600 mb-4">{{ project.description }}</p>
+          <div class="w-full bg-gray-200 h-4 rounded-full overflow-hidden mb-4">
+            <div class="bg-green-600 h-4 text-white text-xs text-center" style="width: {{ project.progress }}%;">
+              {{ project.progress|floatformat:0 }}%
+            </div>
+          </div>
+          <ul class="space-y-2">
+            {% for task in tasks %}
+              <li class="flex justify-between items-center bg-[#fdfdfd] border border-[#e7c2c4] rounded p-2">
+                <a href="{% url 'task_detail' task.id %}" class="text-sm truncate text-[#a51c30] hover:underline">
+                  {{ task.title }}
+                </a>
+                <div class="flex gap-2 items-center">
+                  {% if task.is_completed %}✅{% else %}⏳{% endif %}
+                  {% if task.is_approved %}
+                    <span class="text-xs text-green-600 font-semibold">Approved</span>
+                  {% elif task.is_completed %}
+                    <form method="POST" action="{% url 'approve_task' task.id %}">
+                      {% csrf_token %}
+                      <button class="text-xs text-white bg-green-600 px-2 py-1 rounded">Approve</button>
+                    </form>
+                  {% endif %}
+                </div>
+              </li>
+            {% empty %}
+              <li class="text-sm text-gray-500">No tasks found.</li>
+            {% endfor %}
+          </ul>
+
+        </div>
+        <div class="bg-white rounded-xl shadow border border-[#e7c2c4] p-4">
+          <h2 class="text-md font-bold text-[#a51c30] mb-2">Messages</h2>
+          <div class="flex gap-2 mb-3">
+            <input type="text" placeholder="Search messages..." class="flex-1 text-sm px-2 py-1 border border-[#e7c2c4] rounded-md focus:outline-none focus:ring-2 focus:ring-[#a51c30]">
+            <select class="border border-[#e7c2c4] rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#a51c30]">
+              <option>All</option>
+              <option>LCLS-II-HE</option>
+              <option>Unread</option>
+              <option>Mentions</option>
+              <option>Read</option>
+            </select>
+          </div>
+          <div class="bg-[#fafafa] p-2 rounded border border-gray-300 text-sm text-gray-500 text-center">No messages yet</div>
+        </div>
+      </div>
+      <div class="flex flex-col gap-4">
+        <div class="bg-white rounded-xl shadow border border-[#e7c2c4] p-4">
+          <h2 class="text-md font-bold text-[#a51c30] mb-2">Project Documents</h2>
+          <ul class="list-disc pl-5 space-y-1 text-sm">
+            <li><a href="#" class="text-[#a51c30] hover:underline">Traveller</a></li>
+            <li><a href="#" class="text-[#a51c30] hover:underline">Cleanroom Policy</a></li>
+          </ul>
+        </div>
+        <div class="bg-white rounded-xl shadow border border-[#e7c2c4] p-4">
+          <h2 class="text-md font-bold text-[#a51c30] flex items-center gap-2">🤖 Ask Lei</h2>
+          <p class="text-sm text-gray-700 mt-2">Ask about this project</p>
+          <div class="flex gap-2 mt-3">
+            <input type="text" class="flex-1 border border-gray-300 rounded-full px-3 py-1 text-sm focus:ring-2 focus:ring-[#a51c30] focus:outline-none transition" placeholder="Enter text here..." />
+            <button class="bg-[#a51c30] text-white px-4 py-1.5 text-sm rounded-full hover:bg-red-700 transition">&rarr;</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Add Task</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#f4e7e5] min-h-screen flex items-center justify-center p-4">
+  <div class="max-w-3xl w-full bg-white p-6 rounded-xl shadow">
+    <h2 class="text-xl font-bold text-[#a51c30] mb-4">Add Task to "{{ project.name }}"</h2>
+
+    <!-- Regular Task Creation Form -->
+    <form method="post">
+      {% csrf_token %}
+      <div class="space-y-4">
+        {{ form.as_p }}
+        <button type="submit" class="bg-[#a51c30] text-white px-4 py-2 rounded">Add Task</button>
+      </div>
+    </form>
+
+    <hr class="my-6 border-t-2 border-gray-200">
+
+    <!-- PDF Extraction Section -->
+    <h3 class="text-lg font-semibold mb-2">📄 Or Extract Tasks from Document</h3>
+
+    <!-- Toggle Upload Form -->
+    <button onclick="document.getElementById('pdf-upload-form').classList.toggle('hidden')"
+            class="mb-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+      Upload & Extract
+    </button>
+
+    <!-- Upload PDF Form -->
+    <div id="pdf-upload-form" class="hidden">
+      <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="pdf_file" accept=".pdf" required class="mb-2">
+        <button type="submit" class="bg-green-600 text-white px-4 py-1 rounded">Extract</button>
+      </form>
+    </div>
+
+    {% if extracted_tasks %}
+    <form method="POST" action="{% url 'save_extracted_tasks' %}" class="mt-6 space-y-6">
+      {% csrf_token %}
+      <h3 class="text-lg font-semibold text-gray-800">Extracted Tasks</h3>
+
+      {% for task in extracted_tasks %}
+        <div class="p-4 bg-gray-100 rounded-lg space-y-2">
+          <p><strong>{{ task.section }}</strong>: {{ task.title }}</p>
+
+          <input type="hidden" name="tasks[{{ forloop.counter0 }}][title]" value="{{ task.title }}">
+          <input type="hidden" name="tasks[{{ forloop.counter0 }}][section]" value="{{ task.section }}">
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium">Assign to:</label>
+              <select name="tasks[{{ forloop.counter0 }}][user]" class="w-full p-2 border rounded">
+                {% for user in users %}
+                  <option value="{{ user.id }}">{{ user.username }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium">Project:</label>
+              <select name="tasks[{{ forloop.counter0 }}][project]" class="w-full p-2 border rounded">
+                {% for proj in projects %}
+                  <option value="{{ proj.id }}" {% if proj.id == project.id %}selected{% endif %}>{{ proj.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium">Component:</label>
+              <select name="tasks[{{ forloop.counter0 }}][component]" class="w-full p-2 border rounded">
+                {% for component in components %}
+                  <option value="{{ component.id }}">{{ component.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium">Due Date:</label>
+              <input type="date" name="tasks[{{ forloop.counter0 }}][due_date]" class="w-full p-2 border rounded">
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+
+      <button type="submit" class="bg-[#a51c30] text-white px-6 py-2 rounded hover:bg-[#8a1627]">
+        Save All Extracted Tasks
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</body>
+</html>

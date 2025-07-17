@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Task – {{ project.name }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-900 p-6">
+    <div class="max-w-2xl mx-auto bg-white shadow p-6 rounded-md">
+        <h1 class="text-2xl font-bold mb-4">Create New Task</h1>
+        <p class="text-gray-600 mb-6">For project: <strong>{{ project.name }}</strong></p>
+
+        <form method="POST" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label class="block text-sm font-medium mb-1">Title</label>
+                <input type="text" name="title" class="w-full border rounded px-3 py-2 text-sm" required>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-1">Description</label>
+                <textarea name="description" class="w-full border rounded px-3 py-2 text-sm" rows="4"></textarea>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-1">Assign to Technician</label>
+                <select name="technician" class="w-full border rounded px-3 py-2 text-sm" required>
+                    {% for tech in technicians %}
+                        <option value="{{ tech.id }}">{{ tech.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-1">Due Date</label>
+                <input type="date" name="due_date" class="w-full border rounded px-3 py-2 text-sm">
+            </div>
+
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded">
+                Create Task
+            </button>
+        </form>
+
+        <div class="mt-6">
+            <a href="{% url 'project_detail' project.id %}" class="text-blue-600 hover:underline text-sm">← Back to Project</a>
+        </div>
+    </div>
+</body>
+</html>

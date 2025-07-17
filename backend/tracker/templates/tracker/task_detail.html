@@ -1,124 +1,137 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Task Detail</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Task Detail | Cleanroom Tracker</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    .font-playfair { font-family: 'Playfair Display', serif; }
+    .font-inter { font-family: 'Inter', sans-serif; }
+  </style>
 </head>
-<body class="bg-[#fdf8f6] min-h-screen font-inter p-8">
-
+<body class="bg-[#fdf8f6] min-h-screen font-inter">
   <!-- Top Bar -->
-  <header class="bg-[#fcfbfa] shadow-md px-6 py-4 flex justify-between items-center transition-all duration-500 
-    ease-in-out">
+  <header class="bg-[#fcfbfa] shadow-md px-6 py-4 flex justify-between items-center">
     <h1 class="text-2xl font-playfair text-[#a51c30]">Dashboard</h1>
     <div class="flex items-center gap-6">
-      <!-- Calendar Icon -->
-      <a href = "calendar.html" class = "hover:text-[#a51c30] transition-tranform duration-300 hover:scale-110 ">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-[#a51c30] hover:text-red-700 cursor-pointer 
-          transition-transform duration-300 hover:scale-110" fill="none"     viewBox="0 0 24 24" 
-          stroke="currentColor">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke-width="2"/>
-          <line x1="16" y1="2" x2="16" y2="6" stroke-width="2"/>
-          <line x1="8" y1="2" x2="8" y2="6" stroke-width="2"/>
-          <line x1="3" y1="10" x2="21" y2="10" stroke-width="2"/>
-        </svg>
-      </a>
-
-      <!-- Settings Icon -->
-      <a href = "settings.html" class = "hover:text-[#a51c30] transition-tranform duration-300 hover:scale-110 ">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" 
-          stroke="currentColor" class="w-6 h-6 text-[#a51c30] hover:text-red-700 cursor-pointer transition-
-          transform duration-300 hover:rotate-12">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 
-            0a1.724 1.724 0 002.573 1.01c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.011 2.572c1.756.426 1.756 
-            2.924 0 3.35a1.724 1.724 0 00-1.011 2.573c.94 1.543-.827 3.31-2.37 2.37a1.724 1.724 0 00-2.573 
-            1.012c-.426 1.755-2.924 1.755-3.35 0a1.724 1.724 0 00-2.572-1.011c-1.544.94-3.31-.827-2.37-2.37a1.724 
-            1.724 0 00-1.012-2.573c-1.755-.426-1.755-2.924 0-3.35a1.724 1.724 0 001.012-2.572c-.94-1.544.826-3.31 
-            2.37-2.37.996.608 2.296.07 2.572-1.01z" />
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-      </a>
-
-      <!-- Profile Icon -->
-      <a href = "profile.html" class = "hover:text-[#a51c30] transition-tranform duration-300 hover:scale-110 ">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-[#a51c30] hover:text-red-700 cursor-pointer 
-          transition-transform duration-300 hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <circle cx="12" cy="8" r="4" stroke-width="2"/>
-          <path d="M6 20c0-3.3137 2.6863-6 6-6s6 2.6863 6 6" stroke-width="2"/>
-        </svg>
-      </a>
-      </div>
+      <a href="calendar.html" class="hover:text-[#a51c30] hover:scale-110 transition-transform">📅</a>
+      <a href="settings.html" class="hover:text-[#a51c30] hover:scale-110 transition-transform">⚙️</a>
+      <a href="profile.html" class="hover:text-[#a51c30] hover:scale-110 transition-transform">👤</a>
+    </div>
   </header>
 
-  <!-- Main Layout -->
-  <main class="flex flex-1 min-h-0">
-
+  <main class="flex">
     <!-- Sidebar -->
-    <aside class="w-1/5 bg-[#faf9f9] border-r border-gray-300 p-6">
+    <aside class="w-1/5 bg-[#faf9f9] border-r border-gray-300 p-6 hidden md:block">
       <nav class="flex flex-col gap-4">
-        <a href="{% url 'project_list' %}" class="flex items-center gap-3 text-gray-800 px-3 py-2 rounded-md 
-          hover:bg-
-          [#f4e8e7] hover:text-[#a51c30] hover:translate-x-1 transition-all">
-          <span>📁</span> <span>Projects</span>
-        </a>
-        <a href="{% url 'tech_tasks' %}" class="flex items-center gap-3 text-gray-800 px-3 py-2 rounded-md 
-          hover:bg-[#f4e8e7] hover:text-[#a51c30] hover:translate-x-1 transition-all">
-          <span>📝</span> <span>My Tasks</span>
-        </a>
-        <a href="{% url 'components' %}" class="flex items-center gap-3 text-gray-800 px-3 py-2 rounded-md 
-          hover:bg-[#f4e8e7] hover:text-[#a51c30] hover:translate-x-1 transition-all">
-          <span>🔧</span> <span>Components</span>
-        </a>
-        <a href="messages.html" class="flex items-center gap-3 text-gray-800 px-3 py-2 rounded-md hover:bg-
-          [#f4e8e7] hover:text-[#a51c30] hover:translate-x-1 transition-all">
-          <span>💬</span> <span>Messages</span>
-        </a>
-        <a href="alerts.html" class="flex items-center gap-3 text-gray-800 px-3 py-2 rounded-md hover:bg-[#f4e8e7] 
-          hover:text-[#a51c30] hover:translate-x-1 transition-all">
-          <span>🚨</span> <span>Alerts</span>
-        </a>
+        <a href="{% url 'project_list' %}" class="flex items-center gap-3 px-3 py-2 rounded hover:bg-[#f4e8e7] hover:text-[#a51c30]">📁 Projects</a>
+        <a href="{% url 'tech_tasks' %}" class="flex items-center gap-3 px-3 py-2 rounded hover:bg-[#f4e8e7] hover:text-[#a51c30]">📝 My Tasks</a>
+        <a href="{% url 'components' %}" class="flex items-center gap-3 px-3 py-2 rounded hover:bg-[#f4e8e7] hover:text-[#a51c30]">🔧 Components</a>
+        <a href="messages.html" class="flex items-center gap-3 px-3 py-2 rounded hover:bg-[#f4e8e7] hover:text-[#a51c30]">💬 Messages</a>
+        <a href="alerts.html" class="flex items-center gap-3 px-3 py-2 rounded hover:bg-[#f4e8e7] hover:text-[#a51c30]">🚨 Alerts</a>
       </nav>
     </aside>
 
-  <div class="max-w-3xl mx-auto bg-white border border-[#e7c2c4] rounded-lg p-6 shadow">
-    <h1 class="text-2xl font-bold text-[#a51c30] mb-2">{{ task.title }}</h1>
-    <p class="text-sm text-gray-700 mb-4">{{ task.description }}</p>
+    <!-- Main Content -->
+    <section class="flex-1 p-6">
+      <div class="max-w-3xl mx-auto bg-white border border-[#e7c2c4] rounded-lg p-6 shadow">
+        <h1 class="text-2xl font-bold text-[#a51c30] mb-2">{{ task.title }}</h1>
+        <p class="text-sm text-gray-700 mb-4">{{ task.description }}</p>
 
-    <p class="text-sm"><strong>Status:</strong>
-      {% if task.is_approved %}
-        <span class="text-green-600 font-semibold">Approved</span>
-      {% elif task.is_completed %}
-        <span class="text-yellow-600 font-semibold">Completed (Pending Approval)</span>
-      {% else %}
-        <span class="text-gray-600">Pending</span>
-      {% endif %}
-    </p>
+        <p class="text-sm mb-2">
+          <strong>Status:</strong>
+          {% if task.is_approved %}
+            <span class="text-green-600 font-semibold">Approved</span>
+          {% elif task.completed %}
+            <span class="text-yellow-600 font-semibold">Completed (Pending Approval)</span>
+          {% else %}
+            <span class="text-gray-600">Pending</span>
+          {% endif %}
+        </p>
 
-    <hr class="my-4">
+        <hr class="my-4">
 
-    {% if task.notes %}
-      <div class="mb-4">
-        <h2 class="text-md font-semibold text-[#a51c30]">Technician Notes</h2>
-        <p class="text-sm text-gray-800">{{ task.notes }}</p>
+        {% if task.notes %}
+        <div class="mb-4">
+          <h2 class="text-md font-semibold text-[#a51c30]">Technician Notes</h2>
+          <p class="text-sm text-gray-800">{{ task.notes }}</p>
+        </div>
+        {% endif %}
+
+        {% if task.image %}
+        <div class="mb-4">
+          <h2 class="text-md font-semibold text-[#a51c30]">Uploaded Image</h2>
+          <img src="{{ task.image.url }}" alt="Task Upload" class="rounded w-full max-w-sm border mt-2">
+        </div>
+        {% endif %}
+
+        {% if task.video %}
+        <div class="mb-4">
+          <h2 class="text-md font-semibold text-[#a51c30]">Uploaded Video</h2>
+          <video controls class="w-full max-w-md mt-2">
+            <source src="{{ task.video.url }}" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+        </div>
+        {% endif %}
+
+        {% if task.audio %}
+        <div class="mb-4">
+          <h2 class="text-md font-semibold text-[#a51c30]">Uploaded Audio</h2>
+          <audio controls class="w-full mt-2">
+            <source src="{{ task.audio.url }}" type="audio/mpeg">
+            Your browser does not support the audio element.
+          </audio>
+        </div>
+        {% endif %}
+
+        {% if task.doc_upload %}
+        <div class="mb-4">
+          <h2 class="text-md font-semibold text-[#a51c30]">Uploaded Document</h2>
+          <a href="{{ task.doc_upload.url }}" target="_blank" class="text-blue-600 hover:underline">📄 View Document</a>
+        </div>
+        {% endif %}
+
+        {% if not task.completed %}
+        <!-- Submit Form for Technicians -->
+        <form method="post" action="{% url 'submit_task' task.id %}" enctype="multipart/form-data" class="mt-6 space-y-4">
+          {% csrf_token %}
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Describe what you did:</label>
+            <textarea name="completion_notes" rows="4" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#a51c30]"></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Upload image:</label>
+            <input type="file" name="image_upload" accept="image/*" class="block w-full text-sm border rounded-md">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Upload video:</label>
+            <input type="file" name="video_upload" accept="video/*" class="block w-full text-sm border rounded-md">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Upload audio:</label>
+            <input type="file" name="audio_upload" accept="audio/*" class="block w-full text-sm border rounded-md">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Upload document (PDF):</label>
+            <input type="file" name="doc_upload" accept=".pdf,.doc,.docx" class="block w-full text-sm border rounded-md">
+          </div>
+          <button type="submit" class="bg-[#a51c30] text-white px-4 py-2 rounded hover:bg-red-700 transition">
+            ✅ Submit for Approval
+          </button>
+        </form>
+        {% endif %}
+
+        <div class="mt-6">
+          <a href="{% url 'tech_tasks' %}" class="inline-block bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300 transition">← Back to My Tasks</a>
+          {% if user.groups.all.0.name == "lead" %}
+            <a href="{% url 'edit_task' task.id %}" class="inline-block bg-[#a51c30] text-white px-4 py-2 rounded hover:bg-red-700 transition ml-4">✏️ Edit Task</a>
+          {% endif %}
+        </div>
       </div>
-    {% endif %}
-
-    {% if task.image %}
-      <div class="mb-4">
-        <h2 class="text-md font-semibold text-[#a51c30]">Uploaded Image</h2>
-        <img src="{{ task.image.url }}" alt="Task Upload" class="rounded w-full max-w-sm border mt-2">
-      </div>
-    {% endif %}
-
-    <a href="{% url 'tech_tasks' %}" class="inline-block bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300 transition mt-4">← Back to My Tasks</a>
-    
-    {% if user.groups.all.0.name == "lead" %}
-      <a href="{% url 'edit_task' task.id %}" class="inline-block bg-[#a51c30] text-white px-4 py-2 rounded hover:bg-red-700 transition mt-2 ml-4">
-        ✏️ Edit Task
-      </a>
-    {% endif %}
-
-  </div>
-
+    </section>
+  </main>
 </body>
 </html>

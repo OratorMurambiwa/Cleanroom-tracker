@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Project Lead Dashboard | Cleanroom Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    .font-playfair {
+      font-family: 'Playfair Display', serif;
+    }
+    .font-inter {
+      font-family: 'Inter', sans-serif;
+    }
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fade-in 0.6s ease-out;
+    }
+  </style>
+</head>
+<body class="h-screen overflow-hidden font-inter font-semibold bg-gradient-to-br from-[#f4e7e5] to-[#f0d9d6] text-gray-800">
+
+  <!-- Top Bar (fixed) -->
+  <header class="bg-[#fcfbfa] shadow-md px-6 py-4 flex justify-between items-center">
+    <h1 class="text-2xl font-playfair text-[#a51c30]">Dashboard</h1>
+    <div class="flex items-center gap-6">
+      <a href="calendar.html" class="hover:text-[#a51c30] transition-transform duration-300 hover:scale-110">📅</a>
+      <a href="settings.html" class="hover:text-[#a51c30] transition-transform duration-300 hover:rotate-12">⚙️</a>
+      <a href="profile.html" class="hover:text-[#a51c30] transition-transform duration-300 hover:scale-110">👤</a>
+    </div>
+  </header>
+
+  <!-- Main Layout (full height) -->
+  <div class="flex h-[calc(100vh-72px)]"> <!-- Adjust if header height changes -->
+
+    <!-- Sidebar (fixed height, no scroll) -->
+    <aside class="w-1/5 bg-[#faf9f9] border-r border-gray-300 p-6 overflow-y-auto">
+      <nav class="flex flex-col gap-4">
+        <a href="{% url 'project_list' %}" class="flex items-center gap-3 text-gray-800 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] hover:translate-x-1 transition-all">📁 Projects</a>
+        <a href="{% url 'assign_tasks' %}" class="flex items-center gap-3 text-gray-800 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] hover:translate-x-1 transition-all">📝 Tasks</a>
+        <a href="{% url 'components' %}" class="flex items-center gap-3 text-gray-800 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] hover:translate-x-1 transition-all">🔧 Components</a>
+        <a href="{% url 'create_project' %}" class="flex items-center gap-3 text-gray-800 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] hover:translate-x-1 transition-all">➕ Create Project</a>
+        <a href="{% url 'create_component' %}" class="flex items-center gap-3 text-gray-800 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] hover:translate-x-1 transition-all">➕ Create Component</a>
+        <a href="messages.html" class="flex items-center gap-3 text-gray-800 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] hover:translate-x-1 transition-all">💬 Messages</a>
+        <a href="alerts.html" class="flex items-center gap-3 text-gray-800 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] hover:translate-x-1 transition-all">🚨 Alerts</a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 p-6 space-y-8 overflow-y-auto">
+      <!-- Project Info -->
+      <div class="bg-white p-6 rounded-xl shadow">
+        <h2 class="text-2xl font-bold text-[#a51c30]">{{ project.name }}</h2>
+        <p class="text-sm text-gray-700 mb-4">{{ project.description }}</p>
+
+        <!-- Updated Progress Bar -->
+        <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
+          <div class="bg-[#a51c30] h-4 rounded-full" style="width: {{ project.progress }}%;"></div>
+        </div>
+        <p class="text-sm text-gray-600">{{ project.progress|floatformat:0 }}% Complete</p>
+
+
+
+      
+
+        <!-- Team Members -->
+        <div class="bg-white p-6 rounded-xl shadow">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-semibold text-[#a51c30]">Team Members</h3>
+            <a href="{% url 'add_team_member' project.id %}" class="bg-[#a51c30] text-white px-4 py-2 rounded text-sm">Add Member</a>
+          </div>
+          <ul class="space-y-2">
+            {% for user in project.assigned_users.all %}
+            <li class="flex justify-between text-sm text-gray-800 border-b pb-1">
+              <span>{{ user.get_full_name }} ({{ user.username }})</span>
+              <span class="italic text-gray-500">
+                {% if user.profile.role %}{{ user.profile.role }}{% else %}Contributor{% endif %}
+              </span>
+            </li>
+            {% empty %}
+            <li class="text-gray-500">No team members assigned.</li>
+            {% endfor %}
+          </ul>
+        </div>
+
+        <!-- Tasks -->
+        <div class="bg-white p-6 rounded-xl shadow">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-semibold text-[#a51c30]">Tasks</h3>
+            <a href="{% url 'create_task' project.id %}" class="bg-[#a51c30] text-white px-4 py-2 rounded text-sm">Add Task</a>
+          </div>
+          <form method="get" class="flex flex-wrap gap-4 mb-4">
+            <input type="text" name="search" placeholder="Search tasks..." class="flex-1 border rounded px-3 py-2 text-sm">
+            <select name="status" class="border rounded px-3 py-2 text-sm">
+              <option value="">All Statuses</option>
+              <option value="todo">To Do</option>
+              <option value="in_progress">In Progress</option>
+              <option value="completed">Completed</option>
+              <option value="approved">Approved</option>
+            </select>
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded text-sm">Apply</button>
+          </form>
+          <ul class="space-y-3">
+            {% for task in project.tasks.all %}
+            <li class="border p-4 rounded-lg hover:bg-[#fdf3f2] transition">
+              <a href="{% if task.is_completed and not task.is_approved %}
+                         {% url 'review_task_for_approval' task.id %}
+                       {% else %}
+                         {% url 'review_task_for_approval' task.id %}
+                       {% endif %}" class="block">
+                <h4 class="font-semibold text-blue-700 hover:underline">{{ task.title }}</h4>
+                <p class="text-sm text-gray-600">{{ task.description }}</p>
+                <p class="text-xs text-gray-500">Status: 
+                  {% if task.is_approved %}
+                    <span class="text-green-600 font-medium">Approved</span>
+                  {% elif task.is_completed %}
+                    <span class="text-yellow-600 font-medium">Completed (Pending Approval)</span>
+                  {% else %}
+                    <span class="text-gray-600">Pending</span>
+                  {% endif %}
+                </p>
+              </a>
+            </li>
+            {% empty %}
+            <li class="text-gray-500">No tasks match your filters.</li>
+            {% endfor %}
+          </ul>
+
+
+
+        </div>
+
+        <!-- Documents -->
+        <div class="bg-white p-6 rounded-xl shadow">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-semibold text-[#a51c30]">Documents</h3>
+            <a href="{% url 'upload_document' project.id %}" class="bg-[#a51c30] text-white px-4 py-2 rounded text-sm hover:bg-[#911924]">Upload Document</a>
+          </div>
+          <ul class="space-y-3">
+            {% for doc in project.documents.all %}
+            <li class="flex justify-between text-sm text-gray-700 border-b pb-1">
+              <a href="{{ doc.file.url }}" class="underline">{{ doc.file.name|slice:'20' }}</a>
+              <span class="text-xs text-gray-500">{{ doc.uploaded_at|date:"M d, Y" }}</span>
+            </li>
+            {% empty %}
+            <li class="text-gray-500">No documents uploaded.</li>
+            {% endfor %}
+          </ul>
+        </div>
+
+
+        <!-- Components -->
+        <div class="bg-white p-6 rounded-xl shadow">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-semibold text-[#a51c30]">Components</h3>
+            <a href="{% url 'add_component' project.id %}" class="bg-[#a51c30] text-white px-4 py-2 rounded text-sm">Add Component</a>
+          </div>
+
+          <p class="text-sm text-gray-500 mb-2">
+            Showing {{ components|length }} component{{ components|length|pluralize }}
+          </p>
+
+          <ul class="space-y-3">
+            {% for component in components %}
+              <li class="border p-4 rounded-lg">
+                <h4 class="font-semibold">{{ component.name }}</h4>
+                <p class="text-sm text-gray-600">{{ component.description }}</p>
+                <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+                  <div class="bg-green-500 h-2 rounded-full" style="width: {{ component.progress|floatformat:0 }}%;"></div>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">{{ component.progress|floatformat:0 }}% Complete</p>
+              </li>
+            {% empty %}
+              <li class="text-gray-500">No components associated.</li>
+            {% endfor %}
+          </ul>
+        </div>
+
+
+
+    </div>
+  </main>
+</body>
+</html>

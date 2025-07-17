@@ -1,37 +1,66 @@
-
 from django.contrib import admin
 from django.urls import path
 from tracker import views
 from django.conf import settings
 from django.conf.urls.static import static
 
-
-
 urlpatterns = [
     path('admin/', admin.site.urls),
+
+    # Login (Home page)
     path('', views.custom_login_view, name='custom_login'),
-    path('tasks/', views.tasks_view, name='tasks'),
+
+    # Dashboard redirect based on role
     path('dashboard/', views.role_based_redirect, name='dashboard'),
+
+    # Dashboards
     path('lead-dashboard/', views.lead_dashboard, name='lead_dashboard'),
     path('tech-dashboard/', views.tech_dashboard, name='tech_dashboard'),
+
+    # Task actions
     path('submit_task/<int:task_id>/', views.submit_task, name='submit_task'),
     path('approve_task/<int:task_id>/', views.approve_task, name='approve_task'),
-    path('project/<int:project_id>/', views.project_detail_view, name='project_detail'),
-    path('assign_tasks/', views.assign_tasks_view, name='assign_tasks'),
-    path('my-tasks/', views.tech_task_list, name='tech_tasks'),
-    path('tasks/<int:task_id>/', views.task_detail_view, name='task_detail'),
+     path('tasks/<int:task_id>/', views.task_detail_view, name='task_detail'),
     path('tasks/<int:task_id>/edit/', views.edit_task_view, name='edit_task'),
+    path('my-tasks/', views.tech_task_list, name='tech_tasks'),
+    path('assign_tasks/', views.assign_tasks_view, name='assign_tasks'),
+     path('tasks/<int:task_id>/review/', views.review_task_for_approval, name='review_task_for_approval'),
+    path('projects/<int:project_id>/create-task/', views.create_task_view, 
+         name='create_task'),
+
+    # Projects
+    path('projects/', views.project_list_view, name='project_list'),
+    path('projects/<int:project_id>/', views.project_detail_view, name='project_detail'),
     path('create_project/', views.create_project_view, name='create_project'),
-    path('create_component/', views.create_component_view, name='create_component'),
-    path('components/<int:component_id>/edit/', views.edit_component, 
-         name='edit_component'),
-    path('components/<int:component_id>/delete/', views.delete_component, 
-         name='delete_component'),
+    path('tech/projects/<int:project_id>/', views.tech_project_detail_view, name='tech_project_detail'),
+
+    # Components
     path('components/', views.components_view, name='components'),
-    path('components/<int:component_id>/reassign-task/', 
-         views.reassign_tasks_to_component, 
-         name='reassign_tasks_to_component'),
-    path('projects/', views.project_list_view, name='project_list')
+    path('create_component/', views.create_component_view, name='create_component'),
+    path('components/<int:component_id>/edit/', views.edit_component, name='edit_component'),
+     path('components/<int:component_id>/', views.component_detail_view, name='component_detail'),
+    path('component-list/', views.component_list_view, name='component_list'),
+
+    # Calendar and Reminders
+    path('calendar/', views.calendar_view, name='calendar'),
+    path('create_reminder/', views.create_reminder, name='create_reminder'),
+
+    # Technician dashboard (optional, if needed as separate page)
+    path('technician-dashboard/', views.technician_dashboard, name='technician_dashboard'),
+
+    #additional buttons
+    path('projects/<int:project_id>/assign-user/', views.assign_user_view, name='assign_user'),
+    path('projects/<int:project_id>/upload-document/', views.upload_document_view, name='upload_document'),
+    path('projects/<int:project_id>/create-task/', views.create_task_view, name='create_task'),
+    path('projects/<int:project_id>/add-task/', views.add_tasks_view, name='add_tasks'),
+    path('tasks/save-extracted/', views.save_extracted_tasks, name='save_extracted_tasks'),
+    path('projects/<int:project_id>/add-component/',
+         views.add_component, name='add_component'),
+     path('tech/projects/', views.tech_project_list, name='tech_project_list'),
+    path('projects/<int:project_id>/add-team-member/', views.add_team_member, name='add_team_member'),
+
+
 ]
 
+# Serve uploaded media files during development
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
