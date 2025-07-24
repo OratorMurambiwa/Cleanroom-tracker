@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Component Details | Cleanroom Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    .font-playfair { font-family: 'Playfair Display', serif; }
+    .font-inter { font-family: 'Inter', sans-serif; }
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in { animation: fade-in 0.6s ease-out; }
+  </style>
+</head>
+<body class="min-h-screen font-inter font-semibold flex flex-col bg-gradient-to-br from-[#f4e7e5] to-[#f0d9d6] text-gray-800 overflow-hidden">
+
+  <!-- Header -->
+  <header class="bg-[#fcfbfa] shadow-md px-6 py-4 flex justify-between items-center">
+    <h1 class="text-2xl font-playfair text-[#a51c30]">Technician Dashboard</h1>
+  </header>
+
+  <main class="flex flex-1 min-h-0">
+    <!-- Sidebar -->
+    <aside class="hidden md:block w-1/5 bg-[#faf9f9] border-r border-gray-300 p-6">
+      <nav class="flex flex-col gap-4">
+        <a href="{% url 'project_list' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all">📁 Projects</a>
+        <a href="{% url 'tech_tasks' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all">📝 My Tasks</a>
+        <a href="{% url 'components' %}" class="flex items-center gap-3 px-3 py-2 bg-[#f4e8e7] text-[#a51c30] rounded-md">🔧 Components</a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <section class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 p-6 animate-fade-in">
+      <!-- Left Content -->
+      <div class="md:col-span-2 flex flex-col gap-4">
+        <!-- Component Info + Task List -->
+        <div class="bg-white rounded-xl shadow border border-[#e7c2c4] p-4">
+          <div class="mb-4">
+            <h2 class="text-xl font-bold text-[#a51c30] mb-1">{{ component.name }}</h2>
+            <p class="text-sm text-gray-700">{{ component.description }}</p>
+          </div>
+
+          <div class="w-full bg-gray-200 h-4 rounded-full overflow-hidden mb-4">
+            <div class="bg-green-600 h-4 text-white text-xs text-center" style="width: {{ component.progress|floatformat:0 }}%;">
+              {{ component.progress|floatformat:0 }}%
+            </div>
+          </div>
+
+          <h3 class="text-md font-bold text-[#a51c30] mb-2">Your Assigned Tasks</h3>
+
+          {% if tasks %}
+            <ul class="space-y-2">
+              {% for task in tasks %}
+              <li class="flex justify-between items-center bg-[#fdfdfd] border border-[#e7c2c4] rounded p-2">
+                <a href="{% url 'component_task_detail' task.id %}" class="text-sm truncate text-[#a51c30] hover:underline">
+                  {{ task.title }}
+                </a>
+                <div class="flex gap-2 items-center">
+                  {% if task.is_approved %}
+                    ✅ <span class="text-xs text-green-600 font-semibold">Approved</span>
+                  {% elif task.completed %}
+                    ⏳ <span class="text-xs text-yellow-600 font-semibold">Pending Approval</span>
+                  {% else %}
+                    🕓 <span class="text-xs text-gray-600">Pending</span>
+                  {% endif %}
+                </div>
+              </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-sm text-gray-500">No tasks assigned under this component.</p>
+          {% endif %}
+        </div>
+
+        <!-- Messages Box -->
+        <div class="bg-white rounded-xl shadow border border-[#e7c2c4] p-4">
+          <h2 class="text-md font-bold text-[#a51c30] mb-2">Messages</h2>
+          <div class="bg-[#fafafa] p-2 rounded border border-gray-300 text-sm text-gray-500 text-center">No messages yet</div>
+        </div>
+      </div>
+
+      <!-- Right Column -->
+      <div class="flex flex-col gap-4">
+        <!-- Component Documents -->
+        <div class="bg-white rounded-xl shadow border border-[#e7c2c4] p-4">
+          <h2 class="text-md font-bold text-[#a51c30] mb-2">Component Documents</h2>
+          {% if component.documents.all %}
+          <ul class="list-disc pl-5 space-y-1 text-sm">
+            {% for doc in component.documents.all %}
+              <li><a href="{{ doc.file.url }}" class="text-[#a51c30] hover:underline">{{ doc.file.name|slice:":30" }}</a></li>
+            {% endfor %}
+          </ul>
+          {% else %}
+            <p class="text-sm text-gray-500">No documents uploaded.</p>
+          {% endif %}
+        </div>
+
+        <!-- Ask Lei -->
+        <div class="bg-white rounded-xl shadow border border-[#e7c2c4] p-4">
+          <h2 class="text-md font-bold text-[#a51c30] flex items-center gap-2">🤖 Ask Lei</h2>
+          <p class="text-sm text-gray-700 mt-2">Ask about this component</p>
+          <div class="flex gap-2 mt-3">
+            <input type="text" class="flex-1 border border-gray-300 rounded-full px-3 py-1 text-sm focus:ring-2 focus:ring-[#a51c30] focus:outline-none transition" placeholder="Enter question..." />
+            <button class="bg-[#a51c30] text-white px-4 py-1.5 text-sm rounded-full hover:bg-red-700 transition">&rarr;</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

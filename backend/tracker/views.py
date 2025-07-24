@@ -4,6 +4,7 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.models import Group, User
 from django.contrib import messages
 from django.db.models import Q
+from datetime import datetime
 from django.utils import timezone
 from .models import Task, Project, Component, Reminder
 from .forms import (
@@ -92,10 +93,52 @@ def tech_project_list(request):
     projects = Project.objects.all() 
     return render(request, 'tracker/tech_project_list.html', {'projects': projects})
 
+
+@login_required
 def component_detail_view(request, component_id):
     component = get_object_or_404(Component, id=component_id)
-    return render(request, 'tracker/component_detail.html', {'component': component})
+    
+    # ✅ Update progress before rendering
+    update_component_progress(component)
 
+    active_projects = Project.objects.filter(status='ongoing')
+    technicians = User.objects.filter(groups__name='technician')
+
+    # Deduplicate techs from task_set
+    assigned_techs = User.objects.filter(
+        id__in=component.task_set.values_list('assigned_to__id', flat=True)
+    ).distinct()
+
+    if request.method == 'POST':
+        if 'project_id' in request.POST:
+            project_id = request.POST.get('project_id')
+            if project_id:
+                project = get_object_or_404(Project, id=project_id)
+                component.project = project
+                component.save()
+                messages.success(request, f"Linked to project: {project.name}")
+                return redirect('component_detail', component_id=component.id)
+
+        elif 'technician_id' in request.POST:
+            tech_id = request.POST.get('technician_id')
+            if tech_id:
+                tech = get_object_or_404(User, id=tech_id)
+                Task.objects.create(
+                    title=f"Tech Assigned: {tech.get_full_name()}",
+                    description="Auto-assigned via component page",
+                    component=component,
+                    assigned_to=tech,
+                    status='todo'
+                )
+                messages.success(request, f"{tech.get_full_name()} assigned.")
+                return redirect('component_detail', component_id=component.id)
+
+    return render(request, 'tracker/component_detail.html', {
+        'component': component,
+        'active_projects': active_projects,
+        'technicians': technicians,
+        'assigned_techs': assigned_techs,
+    })
 
 # ----------------------- Project Views -----------------------
 
@@ -205,31 +248,37 @@ def component_list_view(request):
     return render(request, 'components.html', {'components': components})
     
 # ----------------------- Task Views -----------------------
-
 @login_required
-def assign_tasks_view(request):
+def assign_tasks_view(request, component_id=None):
     projects = Project.objects.all()
     components = Component.objects.all()
     technicians = User.objects.filter(groups__name='technician')
     tasks = Task.objects.filter(completed=True, is_approved=False)
 
+    selected_component = None
+    if component_id:
+        selected_component = get_object_or_404(Component, id=component_id)
+
     if request.method == 'POST':
         Task.objects.create(
             title=request.POST.get('title'),
             description=request.POST.get('description'),
-            project=Project.objects.get(id=request.POST.get('project')) if request.POST.get('project') else None,
-            component=Component.objects.get(id=request.POST.get('component')) if request.POST.get('component') else None,
+            project=Project.objects.get(id=request.POST.get('project')) if request.POST.get('project') else (selected_component.project if selected_component else None),
+            component=Component.objects.get(id=request.POST.get('component')) if request.POST.get('component') else selected_component,
             assigned_to=User.objects.get(id=request.POST.get('technician')),
             due_date=request.POST.get('due_date')
         )
-        return redirect('assign_tasks')
+        return redirect('assign_tasks')  # You could redirect elsewhere if needed
 
     return render(request, 'tracker/assigntasks.html', {
         'projects': projects,
         'components': components,
         'technicians': technicians,
-        'pending_tasks': tasks
+        'pending_tasks': tasks,
+        'selected_component': selected_component
     })
+
+    
 
 
 @login_required
@@ -258,42 +307,68 @@ def submit_task(request, task_id):
     task = get_object_or_404(Task, id=task_id)
 
     if request.method == 'POST':
-        form = TechnicianTaskSubmissionForm(request.POST, request.FILES, instance=task)
-        if form.is_valid():
-            submitted_task = form.save(commit=False)
-            submitted_task.status = "Pending Approval"
-            submitted_task.save()
-            messages.success(request, "Task submitted for approval.")
-            return redirect('tech_dashboard')
-        else:
-            messages.error(request, "There was an error with your submission.")
-            return render(request, 'tasks/submit_task.html', {'form': form, 'task': task})
+        task.notes = request.POST.get('completion_notes', '')  # ✅ from form
+        task.description = request.POST.get('description', task.description)
 
-    # If accessed via GET (or fallback)
-    return redirect('task_detail', task_id=task.id)
+        # Handle uploaded files
+        if 'image_upload' in request.FILES:
+            task.image = request.FILES['image_upload']
+        if 'video_upload' in request.FILES:
+            task.video = request.FILES['video_upload']
+        if 'audio_upload' in request.FILES:
+            task.audio = request.FILES['audio_upload']
+        if 'doc_upload' in request.FILES:
+            task.document = request.FILES['doc_upload']
+
+        task.completed = True
+        task.status = "Pending Approval"
+        task.save()
+
+        messages.success(request, "Task submitted for approval.")
+        return redirect('tech_tasks')
+
+    return render(request, 'tasks/task_detail.html', {'task': task})
+
+@login_required
+def project_task_detail_view(request, task_id):
+    task = get_object_or_404(Task, id=task_id, project__isnull=False)
+
+    if request.user.groups.filter(name='technician').exists() and task.assigned_to != request.user:
+        return redirect('tech_dashboard')
+
+    return render(request, 'tracker/project_task_detail.html', {'task': task})
 
 
 @login_required
 def approve_task(request, task_id):
     task = get_object_or_404(Task, id=task_id)
+
     if request.method == 'POST':
         task.is_approved = True
         task.status = "Approved"
         task.save()
 
+        # Update project progress
         if task.project:
             update_project_progress(task.project)
+
+        # Update component progress and timestamp
         if task.component:
             update_component_progress(task.component)
+            task.component.updated_at = timezone.now()  # ✅ Force timestamp update
+            task.component.save()
 
         messages.success(request, f"Task '{task.title}' approved.")
-    return redirect('lead_dashboard')
+    
+    return redirect('component_detail', component_id=task.component.id)
+
+
 
 
 @login_required
-def tech_task_list(request):
+def tech_tasks_view(request):
     tasks = Task.objects.filter(assigned_to=request.user)
-    return render(request, 'tracker/tech_task_list.html', {'tasks': tasks})
+    return render(request, 'tracker/tech_tasks.html', {'tasks': tasks})
 
 
 @login_required
@@ -309,22 +384,37 @@ def task_detail_view(request, task_id):
 def edit_task_view(request, task_id):
     task = get_object_or_404(Task, id=task_id)
     technicians = User.objects.filter(groups__name='technician')
-    
+
     if request.method == 'POST':
         task.title = request.POST.get('title')
         task.description = request.POST.get('description')
         task.notes = request.POST.get('notes')
+
+        # Parse deadline (due_date)
+        due_date_str = request.POST.get('due_date')
+        if due_date_str:
+            try:
+                task.due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date()
+            except ValueError:
+                messages.error(request, "Invalid date format. Please use YYYY-MM-DD.")
+        else:
+            task.due_date = None
+
+        # Assigned technician
         tech_id = request.POST.get('assigned_to')
         if tech_id:
             task.assigned_to = User.objects.get(id=tech_id)
+
         task.save()
-        return redirect('task_detail', task_id=task.id)
-    
+        messages.success(request, "Task updated successfully.")
+        return redirect('review_task_for_approval', task_id=task.id)
+
     return render(request, 'tracker/edit_task.html', {
         'task': task,
         'technicians': technicians
     })
 
+@login_required
 def review_task_for_approval(request, task_id):
     task = get_object_or_404(Task, id=task_id)
 
@@ -332,13 +422,47 @@ def review_task_for_approval(request, task_id):
         action = request.POST.get('action')
         if action == 'approve':
             task.is_approved = True
+            task.status = 'Approved'
             task.save()
         elif action == 'reject':
             task.is_completed = False
+            task.status = 'todo'
             task.save()
-        return redirect('project_detail', project_id=task.project.id)
+        return redirect('project_detail', project_id=task.project.id if task.project else task.component.project.id)
 
     return render(request, 'tracker/review_task_for_approval.html', {'task': task})
+
+@login_required
+def component_task_detail_view(request, task_id):
+    task = get_object_or_404(Task, id=task_id, component__isnull=False)
+
+    # Optional: restrict so only the assigned technician sees it
+    if request.user.groups.filter(name='technician').exists() and task.assigned_to != request.user:
+        return redirect('tech_dashboard')
+
+    return render(request, 'tracker/component_task_detail.html', {'task': task})
+
+@login_required
+def component_task_completed_view(request, task_id):
+    task = get_object_or_404(Task, id=task_id)
+
+    if request.method == 'POST':
+        task.notes = request.POST.get('notes', '')
+        if 'image' in request.FILES:
+            task.image = request.FILES['image']
+        if 'video' in request.FILES:
+            task.video = request.FILES['video']
+        if 'audio' in request.FILES:
+            task.audio = request.FILES['audio']
+        if 'document' in request.FILES:
+            task.document = request.FILES['document']
+        task.completed = True
+        task.status = "Pending Approval"
+        task.save()
+        messages.success(request, "Task submitted for approval.")
+        return redirect('tech_tasks')
+
+    return render(request, 'tracker/component_task_completed.html', {'task': task})
 
 
 # ----------------------- Team & Docs -----------------------
@@ -500,6 +624,37 @@ def tech_project_detail_view(request, project_id):
         'status_filter': status_filter,
         'sort_by': sort_by,
     })
+    
+@login_required
+def tech_component_detail_view(request, component_id):
+    component = get_object_or_404(Component, id=component_id)
+    tasks = component.task_set.filter(assigned_to=request.user)
+
+    search_query = request.GET.get('search', '')
+    status_filter = request.GET.get('status', 'all')
+    sort_by = request.GET.get('sort', '')
+
+    if search_query:
+        tasks = tasks.filter(title__icontains=search_query)
+
+    if status_filter == 'completed':
+        tasks = tasks.filter(completed=True)
+    elif status_filter == 'pending':
+        tasks = tasks.filter(completed=False)
+
+    if sort_by == 'due':
+        tasks = tasks.order_by('due_date')
+    elif sort_by == 'priority':
+        tasks = tasks.order_by('-priority')
+
+    return render(request, 'tracker/tech_component_detail.html', {
+        'component': component,
+        'tasks': tasks,
+        'search_query': search_query,
+        'status_filter': status_filter,
+        'sort_by': sort_by,
+    })
+
     
 @login_required
 def save_extracted_tasks(request):

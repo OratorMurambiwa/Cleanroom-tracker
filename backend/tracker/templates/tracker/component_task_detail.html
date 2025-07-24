@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Project Task Detail | Cleanroom Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-[#fdf5f4] text-gray-800 min-h-screen">
+
+  <!-- Top Bar -->
+  <header class="bg-white shadow px-6 py-4 flex justify-between items-center">
+    <h1 class="text-xl font-bold text-[#a51c30]">Component Task Detail</h1>
+    <nav class="space-x-4">
+      <a href="{% url 'tech_dashboard' %}" class="text-sm hover:underline">Dashboard</a>
+      <a href="{% url 'tech_tasks' %}" class="text-sm hover:underline">My Tasks</a>
+      <a href="{% url 'components' %}" class="text-sm hover:underline">Components</a>
+    </nav>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-3xl mx-auto mt-10 bg-white border border-[#e7c2c4] rounded-lg p-6 shadow">
+    <h2 class="text-2xl font-bold text-[#a51c30] mb-2">{{ task.title }}</h2>
+    <p class="text-sm text-gray-700 mb-4">{{ task.description }}</p>
+
+    <div class="text-sm space-y-1 mb-4">
+      <p><strong>Status:</strong>
+        {% if task.is_approved %}
+          <span class="text-green-600 font-semibold">Approved</span>
+        {% elif task.completed %}
+          <span class="text-yellow-600 font-medium">Completed (Pending Approval)</span>
+        {% else %}
+          <span class="text-gray-500">Pending</span>
+        {% endif %}
+      </p>
+      <p><strong>Due Date:</strong> {{ task.due_date|date:"F j, Y" }}</p>
+      <p><strong>Assigned To:</strong> {{ task.assigned_to.get_full_name }}</p>
+    </div>
+
+    {% if task.notes %}
+    <div class="mb-4">
+      <h3 class="text-md font-semibold text-[#a51c30]">Technician Notes</h3>
+      <p class="text-sm text-gray-800">{{ task.notes }}</p>
+    </div>
+    {% endif %}
+
+    {% if task.image %}
+    <div class="mb-4">
+      <h3 class="text-md font-semibold text-[#a51c30]">Uploaded Image</h3>
+      <img src="{{ task.image.url }}" alt="Image" class="rounded shadow max-w-sm mt-2">
+    </div>
+    {% endif %}
+
+    {% if task.video %}
+    <div class="mb-4">
+      <h3 class="text-md font-semibold text-[#a51c30]">Uploaded Video</h3>
+      <video controls class="w-full max-w-md mt-2">
+        <source src="{{ task.video.url }}" type="video/mp4">
+      </video>
+    </div>
+    {% endif %}
+
+    {% if task.audio %}
+    <div class="mb-4">
+      <h3 class="text-md font-semibold text-[#a51c30]">Uploaded Audio</h3>
+      <audio controls class="w-full mt-2">
+        <source src="{{ task.audio.url }}" type="audio/mpeg">
+      </audio>
+    </div>
+    {% endif %}
+
+    {% if task.doc_upload %}
+    <div class="mb-4">
+      <h3 class="text-md font-semibold text-[#a51c30]">Uploaded Document</h3>
+      <a href="{{ task.doc_upload.url }}" class="text-blue-600 hover:underline" target="_blank">📄 View Document</a>
+    </div>
+    {% endif %}
+
+    {% if not task.completed %}
+    <form method="post" action="{% url 'submit_task' task.id %}" enctype="multipart/form-data" class="space-y-4 mt-6">
+      {% csrf_token %}
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Describe what you did:</label>
+        <textarea name="completion_notes" rows="4" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#a51c30]"></textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Upload image:</label>
+        <input type="file" name="image_upload" accept="image/*" class="w-full text-sm border rounded-md">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Upload video:</label>
+        <input type="file" name="video_upload" accept="video/*" class="w-full text-sm border rounded-md">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Upload audio:</label>
+        <input type="file" name="audio_upload" accept="audio/*" class="w-full text-sm border rounded-md">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Upload document:</label>
+        <input type="file" name="doc_upload" accept=".pdf,.doc,.docx" class="w-full text-sm border rounded-md">
+      </div>
+      <button type="submit" class="bg-[#a51c30] text-white px-4 py-2 rounded hover:bg-red-700 transition">✅ Submit for Approval</button>
+    </form>
+    {% endif %}
+
+    <div class="mt-6">
+      <a href="{% url 'tech_project_detail' task.project.id %}" class="text-sm text-gray-700 hover:underline">← Back to Project</a>
+    </div>
+  </main>
+</body>
+</html>

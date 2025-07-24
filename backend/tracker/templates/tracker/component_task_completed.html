@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Component Task Detail</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-[#fdf5f4] min-h-screen text-gray-800">
+
+  <!-- Top Bar -->
+  <header class="bg-white shadow px-6 py-4 flex justify-between items-center">
+    <h1 class="text-xl font-bold text-[#a51c30]">Component Task</h1>
+    <a href="{% url 'tech_dashboard' %}" class="text-sm hover:underline text-[#a51c30]">← Back to Dashboard</a>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-xl mx-auto mt-10 bg-white border border-[#e7c2c4] rounded-lg p-6 shadow">
+    <h2 class="text-2xl font-bold text-[#a51c30] mb-2">{{ task.title }}</h2>
+    <p class="text-sm text-gray-700 mb-4">{{ task.description }}</p>
+
+    <p class="text-sm mb-4">
+      <strong>Status:</strong>
+      {% if task.is_approved %}
+        <span class="text-green-600 font-semibold">Approved</span>
+      {% elif task.completed %}
+        <span class="text-yellow-600 font-semibold">Completed</span>
+      {% else %}
+        <span class="text-gray-600">Pending</span>
+      {% endif %}
+    </p>
+
+    <form method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Describe what you did:</label>
+        <textarea name="notes" rows="4" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">{{ task.notes }}</textarea>
+      </div>
+
+      <div class="mb-3">
+        <label class="block text-sm font-medium text-gray-700">Upload image:</label>
+        <input type="file" name="image" accept="image/*" class="text-sm mt-1" />
+      </div>
+
+      <div class="mb-3">
+        <label class="block text-sm font-medium text-gray-700">Upload video:</label>
+        <input type="file" name="video" accept="video/*" class="text-sm mt-1" />
+      </div>
+
+      <div class="mb-3">
+        <label class="block text-sm font-medium text-gray-700">Upload audio:</label>
+        <input type="file" name="audio" accept="audio/*" class="text-sm mt-1" />
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700">Upload document (PDF):</label>
+        <input type="file" name="document" accept=".pdf" class="text-sm mt-1" />
+      </div>
+
+      <div class="flex items-center gap-4">
+        <button type="submit" class="bg-[#a51c30] text-white px-4 py-2 rounded hover:bg-red-700">
+          ✅ Submit for Approval
+        </button>
+        <a href="{% url 'tech_tasks' %}" class="text-sm bg-gray-200 px-3 py-2 rounded hover:bg-gray-300">← Back to My Tasks</a>
+      </div>
+    </form>
+  </main>
+</body>
+</html>

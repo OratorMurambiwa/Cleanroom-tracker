@@ -12,7 +12,6 @@
   </style>
 </head>
 <body class="bg-[#fdf8f6] min-h-screen font-inter">
-  <!-- Top Bar -->
   <header class="bg-[#fcfbfa] shadow-md px-6 py-4 flex justify-between items-center">
     <h1 class="text-2xl font-playfair text-[#a51c30]">Dashboard</h1>
     <div class="flex items-center gap-6">
@@ -23,7 +22,6 @@
   </header>
 
   <main class="flex">
-    <!-- Sidebar -->
     <aside class="w-1/5 bg-[#faf9f9] border-r border-gray-300 p-6 hidden md:block">
       <nav class="flex flex-col gap-4">
         <a href="{% url 'project_list' %}" class="flex items-center gap-3 px-3 py-2 rounded hover:bg-[#f4e8e7] hover:text-[#a51c30]">📁 Projects</a>
@@ -34,7 +32,6 @@
       </nav>
     </aside>
 
-    <!-- Main Content -->
     <section class="flex-1 p-6">
       <div class="max-w-3xl mx-auto bg-white border border-[#e7c2c4] rounded-lg p-6 shadow">
         <h1 class="text-2xl font-bold text-[#a51c30] mb-2">{{ task.title }}</h1>
@@ -87,15 +84,14 @@
         </div>
         {% endif %}
 
-        {% if task.doc_upload %}
+        {% if task.document %}
         <div class="mb-4">
           <h2 class="text-md font-semibold text-[#a51c30]">Uploaded Document</h2>
-          <a href="{{ task.doc_upload.url }}" target="_blank" class="text-blue-600 hover:underline">📄 View Document</a>
+          <a href="{{ task.document.url }}" target="_blank" class="text-blue-600 hover:underline">📄 View Document</a>
         </div>
         {% endif %}
 
         {% if not task.completed %}
-        <!-- Submit Form for Technicians -->
         <form method="post" action="{% url 'submit_task' task.id %}" enctype="multipart/form-data" class="mt-6 space-y-4">
           {% csrf_token %}
           <div>

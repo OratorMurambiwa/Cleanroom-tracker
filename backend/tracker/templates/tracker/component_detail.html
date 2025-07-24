@@ -2,45 +2,154 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Component Detail</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    .font-playfair { font-family: 'Playfair Display', serif; }
+    .font-inter { font-family: 'Inter', sans-serif; }
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in { animation: fade-in 0.6s ease-out; }
+  </style>
 </head>
-<body class="bg-[#f9f6f1] text-gray-800 font-sans">
-  <div class="max-w-4xl mx-auto p-6 bg-white rounded-2xl shadow-lg mt-10">
-    <h1 class="text-2xl font-bold text-[#a51c30] mb-6">{{ component.name }}</h1>
 
-    <div class="mb-6">
-      <label class="block text-sm text-gray-700 font-semibold mb-1">Progress:</label>
-      <div class="w-full bg-gray-300 h-4 rounded-full overflow-hidden">
+<body class="font-inter font-semibold bg-gradient-to-br from-[#f4e7e5] to-[#f0d9d6] text-gray-800 min-h-screen flex flex-col">
+
+  <!-- Top Bar -->
+  <header class="bg-[#fcfbfa] shadow-md px-6 py-4 flex justify-between items-center h-[72px]">
+    <h1 class="text-2xl font-playfair text-[#a51c30]">Component Detail</h1>
+    <a href="{% url 'lead_dashboard' %}" class="text-sm text-[#a51c30] hover:underline">← Back to Dashboard</a>
+  </header>
+
+  <main class="flex-1 overflow-y-auto p-6 space-y-6 animate-fade-in">
+
+    <!-- Component Overview -->
+    <section class="bg-white p-6 rounded-xl shadow">
+      <h2 class="text-2xl font-bold text-[#a51c30] mb-2">{{ component.name }}</h2>
+      <p class="text-sm text-gray-600 mb-2">{{ component.description }}</p>
+
+      <div class="w-full bg-gray-300 h-4 rounded-full overflow-hidden mb-2">
         <div class="bg-green-600 h-4 text-white text-xs text-center" style="width: {{ component.progress|floatformat:0 }}%;">
           {{ component.progress|floatformat:0 }}%
         </div>
       </div>
-    </div>
+      <p class="text-xs text-gray-500 mb-1">Status: {{ component.status }}</p>
+      <p class="text-xs text-gray-500">Last Updated: {{ component.updated_at|date:"F j, Y" }}</p>
+    </section>
 
-    <div class="mb-6">
-      <label class="block text-sm text-gray-700 font-semibold mb-1">Description:</label>
-      <p class="text-sm text-gray-800">{{ component.description }}</p>
-    </div>
+    <!-- Linked Project with Dropdown -->
+    <section class="bg-white p-6 rounded-xl shadow">
+      <h3 class="text-lg font-semibold text-[#a51c30] mb-4">Linked Project</h3>
 
-    <div class="mb-6">
-      <label class="block text-sm text-gray-700 font-semibold mb-1">Last Updated:</label>
-      <p class="text-sm text-gray-600">{{ component.updated_at }}</p>
-    </div>
+      {% if component.project %}
+        <p class="text-sm text-gray-800 mb-1 font-semibold">Current Project:</p>
+        <a href="{% url 'project_detail' component.project.id %}" class="text-sm text-blue-700 hover:underline">
+          {{ component.project.name }}
+        </a>
+        <p class="text-sm text-gray-600 mb-4">{{ component.project.description|truncatewords:20 }}</p>
+      {% else %}
+        <p class="text-sm text-gray-500 mb-4">No project linked yet.</p>
+      {% endif %}
 
-    {% if component.status %}
-    <div class="mb-6">
-      <label class="block text-sm text-gray-700 font-semibold mb-1">Status:</label>
-      <p class="text-sm text-blue-800">{{ component.status }}</p>
-    </div>
+      <form method="POST" class="mt-4">
+        {% csrf_token %}
+        <label for="project_id" class="block text-sm font-medium text-gray-700 mb-1">Select Project:</label>
+        <select name="project_id" id="project_id" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm mb-2">
+          <option value="">-- Choose a project --</option>
+          {% for project in active_projects %}
+            <option value="{{ project.id }}">{{ project.name }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="bg-[#a51c30] text-white text-sm px-4 py-2 rounded hover:bg-red-700">Link Project</button>
+      </form>
+    </section>
+
+    <!-- Technicians Assigned + Assign Dropdown -->
+    <section class="bg-white p-6 rounded-xl shadow">
+      <h3 class="text-lg font-semibold text-[#a51c30] mb-4">Technicians Assigned</h3>
+
+      {% if assigned_techs %}
+        <ul class="space-y-2 mb-4">
+          {% for tech in assigned_techs %}
+            <li class="text-sm text-gray-700">👨‍🔧 {{ tech.get_full_name }}</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-sm text-gray-500 mb-4">No technicians assigned yet.</p>
+      {% endif %}
+
+      <form method="POST">
+        {% csrf_token %}
+        <label for="technician_id" class="block text-sm font-medium text-gray-700 mb-1">Select Technician:</label>
+        <select name="technician_id" id="technician_id" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm mb-2">
+          <option value="">-- Choose a technician --</option>
+          {% for tech in technicians %}
+            <option value="{{ tech.id }}">{{ tech.get_full_name }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="bg-[#a51c30] text-white text-sm px-4 py-2 rounded hover:bg-red-700">Assign</button>
+      </form>
+    </section>
+
+    
+    <!-- Tasks -->
+    <section class="bg-white p-6 rounded-xl shadow">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-semibold text-[#a51c30]">Tasks</h3>
+        <a href="{% url 'assign_component_task' component.id %}" class="text-sm bg-[#a51c30] text-white px-3 py-1 rounded hover:bg-red-700">Assign Task</a>
+      </div>
+      <ul class="space-y-3">
+        {% for task in component.task_set.all %}
+        <li class="border p-4 rounded-lg hover:bg-[#fdf3f2] transition">
+          <a href="{% url 'review_task_for_approval' task.id %}" class="block">
+            <h4 class="font-semibold text-blue-700 hover:underline">{{ task.title }}</h4>
+            <p class="text-sm text-gray-600 mb-1">{{ task.description }}</p>
+            <p class="text-xs text-gray-500">
+              <strong>Status:</strong>
+              {% if task.is_approved %}
+                <span class="text-green-600 font-medium">Approved</span>
+              {% elif task.completed %}
+                <span class="text-yellow-600 font-medium">Completed</span>
+              {% else %}
+                <span class="text-gray-600">Pending</span>
+              {% endif %}
+            </p>
+            <p class="text-xs text-gray-500">
+              <strong>Due Date:</strong>
+              {% if task.due_date %}
+                {{ task.due_date|date:"F j, Y" }}
+              {% else %}
+                <span class="italic">Not set</span>
+              {% endif %}
+            </p>
+          </a>
+        </li>
+        {% empty %}
+        <li class="text-sm text-gray-500">No tasks assigned to this component.</li>
+        {% endfor %}
+      </ul>
+    </section>
+
+
+    <!-- Optional Documents -->
+    {% if component.documents.all %}
+    <section class="bg-white p-6 rounded-xl shadow">
+      <h3 class="text-lg font-semibold text-[#a51c30] mb-4">Documents</h3>
+      <ul class="space-y-2">
+        {% for doc in component.documents.all %}
+          <li class="flex justify-between text-sm text-gray-700 border-b pb-1">
+            <a href="{{ doc.file.url }}" class="underline">{{ doc.file.name|slice:":25" }}</a>
+            <span class="text-xs text-gray-500">{{ doc.uploaded_at|date:"M d, Y" }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
     {% endif %}
 
-    <div class="mt-8 flex justify-end">
-      <a href="{% url 'tech_dashboard' %}" class="bg-[#a51c30] text-white px-4 py-2 rounded-lg hover:bg-red-700 transition">
-        ← Back to Dashboard
-      </a>
-    </div>
-  </div>
+  </main>
 </body>
 </html>

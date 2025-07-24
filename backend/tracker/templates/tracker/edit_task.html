@@ -47,7 +47,7 @@
     <!-- Sidebar -->
     <aside class="w-1/5 bg-[#faf9f9] border-r border-gray-300 p-6">
       <nav class="flex flex-col gap-4">
-        <a href="{% url 'project_detail' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30]">
+        <a href="{% url 'project_detail' task.project.id %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30]">
           <span>📁</span> <span>Projects</span>
         </a>
         <a href="{% url 'assign_tasks' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30]">
@@ -94,6 +94,13 @@
             <label class="block text-sm text-gray-700 mb-1">Notes (optional)</label>
             <textarea name="notes" rows="3" class="w-full border px-3 py-2 rounded">{{ task.notes }}</textarea>
           </div>
+
+          <!-- Deadline Field -->
+          <div class="mb-4">
+            <label class="block text-sm text-gray-700 mb-1">Deadline</label>
+            <input type="date" name="due_date" value="{{ task.due_date|date:'Y-m-d' }}" class="w-full border px-3 py-2 rounded" />
+          </div>
+
 
           <!-- Assigned Technician -->
           <div class="mb-4">

@@ -60,9 +60,11 @@ class Task(models.Model):
     is_approved = models.BooleanField(default=False)
 
     notes = models.TextField(blank=True, null=True)
-    image = models.ImageField(upload_to='task_images/', blank=True, null=True)
-    video = models.FileField(upload_to='task_videos/', blank=True, null=True)
-    audio = models.FileField(upload_to='task_audios/', blank=True, null=True)
+    image = models.ImageField(upload_to='tasks/images/', blank=True, null=True)
+    video = models.FileField(upload_to='tasks/videos/', blank=True, null=True)
+    audio = models.FileField(upload_to='tasks/audio/', blank=True, null=True)
+    document = models.FileField(upload_to='tasks/docs/', blank=True, null=True)
+
     due_date = models.DateField(null=True, blank=True)
 
     status = models.CharField(

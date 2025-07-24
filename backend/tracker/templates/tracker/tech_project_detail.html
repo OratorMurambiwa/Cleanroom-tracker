@@ -20,21 +20,21 @@
   <header class="bg-[#fcfbfa] shadow-md px-6 py-4 flex justify-between items-center transition-all duration-500 ease-in-out">
     <h1 class="text-2xl font-playfair text-[#a51c30]">Dashboard</h1>
     <div class="flex items-center gap-6">
-      <a href="calendar.html" class="hover:text-[#a51c30] transition-transform duration-300 hover:scale-110"></a>
-      <a href="settings.html" class="hover:text-[#a51c30] transition-transform duration-300 hover:scale-110"></a>
-      <a href="profile.html" class="hover:text-[#a51c30] transition-transform duration-300 hover:scale-110"></a>
+      <!-- Optional future icons -->
     </div>
   </header>
+
   <main class="flex flex-1 min-h-0">
     <aside class="hidden md:block w-1/5 bg-[#faf9f9] border-r border-gray-300 p-6">
       <nav class="flex flex-col gap-4">
-        <a href="{% url 'tech_project_detail' project.id %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all"><span>📁</span><span>Projects</span></a>
+        <a href="{% url 'project_list' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all"><span>📁</span><span>Projects</span></a>
         <a href="{% url 'assign_tasks' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all"><span>📝</span><span>Tasks</span></a>
         <a href="{% url 'components' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all"><span>🔧</span><span>Components</span></a>
         <a href="messages.html" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all"><span>💬</span><span>Messages</span></a>
         <a href="alerts.html" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all"><span>🚨</span><span>Alerts</span></a>
       </nav>
     </aside>
+
     <section class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 p-6 animate-fade-in">
       <div class="md:col-span-2 flex flex-col gap-4">
         <div class="bg-white rounded-xl shadow border border-[#e7c2c4] p-4">
@@ -55,17 +55,20 @@
             </select>
             <button type="submit" class="bg-[#a51c30] text-white px-4 py-1.5 rounded hover:bg-red-700 transition md:col-span-3">Apply Filters</button>
           </form>
+
           <h2 class="text-xl font-bold text-[#a51c30] mb-2">{{ project.name }}</h2>
           <p class="text-sm text-gray-600 mb-4">{{ project.description }}</p>
+
           <div class="w-full bg-gray-200 h-4 rounded-full overflow-hidden mb-4">
             <div class="bg-green-600 h-4 text-white text-xs text-center" style="width: {{ project.progress }}%;">
               {{ project.progress|floatformat:0 }}%
             </div>
           </div>
+
           <ul class="space-y-2">
             {% for task in tasks %}
               <li class="flex justify-between items-center bg-[#fdfdfd] border border-[#e7c2c4] rounded p-2">
-                <a href="{% url 'task_detail' task.id %}" class="text-sm truncate text-[#a51c30] hover:underline">
+                <a href="{% url 'project_task_detail' task.id %}" class="text-sm truncate text-[#a51c30] hover:underline">
                   {{ task.title }}
                 </a>
                 <div class="flex gap-2 items-center">
@@ -84,8 +87,8 @@
               <li class="text-sm text-gray-500">No tasks found.</li>
             {% endfor %}
           </ul>
-
         </div>
+
         <div class="bg-white rounded-xl shadow border border-[#e7c2c4] p-4">
           <h2 class="text-md font-bold text-[#a51c30] mb-2">Messages</h2>
           <div class="flex gap-2 mb-3">
@@ -101,6 +104,7 @@
           <div class="bg-[#fafafa] p-2 rounded border border-gray-300 text-sm text-gray-500 text-center">No messages yet</div>
         </div>
       </div>
+
       <div class="flex flex-col gap-4">
         <div class="bg-white rounded-xl shadow border border-[#e7c2c4] p-4">
           <h2 class="text-md font-bold text-[#a51c30] mb-2">Project Documents</h2>
@@ -109,6 +113,7 @@
             <li><a href="#" class="text-[#a51c30] hover:underline">Cleanroom Policy</a></li>
           </ul>
         </div>
+
         <div class="bg-white rounded-xl shadow border border-[#e7c2c4] p-4">
           <h2 class="text-md font-bold text-[#a51c30] flex items-center gap-2">🤖 Ask Lei</h2>
           <p class="text-sm text-gray-700 mt-2">Ask about this project</p>

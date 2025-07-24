@@ -107,7 +107,7 @@
 
           <h3 class="text-md font-playfair mb-2 mt-6 text-[#a51c30]">Component Builds</h3>
           {% for comp in components %}
-            <a href="{% url 'component_detail' comp.id %}" class="text-sm mb-1 text-[#a51c30] hover:underline hover:text-red-700 block">
+            <a href="{% url 'tech_component_detail' comp.id %}" class="text-sm mb-1 text-[#a51c30] hover:underline hover:text-red-700 block">
               {{ comp.name }}
             </a>
             <div class="w-full bg-gray-200 h-4 rounded-full overflow-hidden mb-4">
