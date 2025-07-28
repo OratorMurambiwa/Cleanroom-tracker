@@ -3,6 +3,10 @@ from django.urls import path
 from tracker import views
 from django.conf import settings
 from django.conf.urls.static import static
+from tracker.views import asset_lookup_view, tech_components_view
+
+
+
 
 urlpatterns = [
     # Admin
@@ -53,11 +57,14 @@ urlpatterns = [
     path('component-tasks/<int:task_id>/', views.component_task_completed_view, name='component_task_completed'),
     path('components/<int:component_id>/assign-task/', views.assign_tasks_view, name='assign_component_task'),
     path('tech/components/<int:component_id>/', views.tech_component_detail_view, name='tech_component_detail'),
+    path('tech/components/', views.tech_components_view, name='tech_components'),
     path('components/<int:component_id>/edit/', views.edit_component, name='edit_component'),
 
 
     # Calendar and Reminders
     path('calendar/', views.calendar_view, name='calendar'),
+    path('upload-doc-tasks/', views.upload_tasks_from_traveler_view, name='upload_tasks_from_traveler'),
+    path('asset-lookup/', asset_lookup_view, name='asset_lookup'),
     path('create_reminder/', views.create_reminder, name='create_reminder'),
 ]
 

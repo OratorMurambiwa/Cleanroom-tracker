@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Task Preview</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#fef9f9] text-gray-800 p-8">
+  <div class="max-w-3xl mx-auto bg-white p-6 rounded shadow">
+    <h2 class="text-2xl font-bold text-[#a51c30] mb-4">Preview Tasks Before Creating</h2>
+    <form method="post">
+      {% csrf_token %}
+      <ul class="space-y-3 mb-6">
+        {% for task in tasks %}
+        <li class="border p-4 rounded bg-gray-50">
+          <h3 class="font-semibold">{{ task.title }}</h3>
+          <p class="text-sm text-gray-600">{{ task.description }}</p>
+        </li>
+        {% endfor %}
+      </ul>
+      <button type="submit" class="bg-[#a51c30] text-white px-6 py-2 rounded hover:bg-red-700">
+        Confirm & Create Tasks
+      </button>
+    </form>
+  </div>
+</body>
+</html>

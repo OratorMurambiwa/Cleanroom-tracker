@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Upload Traveler Document | Cleanroom Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    .font-playfair { font-family: 'Playfair Display', serif; }
+    .font-inter { font-family: 'Inter', sans-serif; }
+    body { @apply font-inter bg-gradient-to-br from-[#f4e7e5] to-[#f0d9d6]; }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center px-4">
+
+  <div class="max-w-xl w-full bg-white p-8 rounded-xl shadow-md border border-[#e7c2c4] mt-10">
+    <h2 class="text-2xl font-playfair font-bold text-[#a51c30] mb-6 text-center">
+      📄 Upload Traveler Document
+    </h2>
+
+    <form method="post" enctype="multipart/form-data" class="space-y-5">
+      {% csrf_token %}
+
+      <div>
+        <label for="id_file" class="block mb-2 font-semibold text-sm text-gray-700">Traveler Document (PDF or DOCX)</label>
+        {{ form.file }}
+      </div>
+
+      <div>
+        <label for="id_related_project" class="block mb-2 font-semibold text-sm text-gray-700">Related Project (optional)</label>
+        {{ form.related_project }}
+      </div>
+
+      <button type="submit" class="w-full bg-[#a51c30] text-white py-2 rounded-md hover:bg-red-700 transition">
+        Upload & Extract Tasks
+      </button>
+    </form>
+  </div>
+
+</body>
+</html>
+

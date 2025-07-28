@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tech Components</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-purple-100 font-sans">
+
+  <div class="flex h-screen">
+    <!-- Sidebar -->
+    <aside class="w-16 sm:w-52 bg-white shadow-md rounded-r-2xl p-4 flex flex-col justify-between">
+      <div class="space-y-6">
+        <a href="#" class="flex items-center gap-2">
+          <img src="https://img.icons8.com/ios-filled/50/home.png" class="w-6" />
+          <span class="hidden sm:inline">Projects</span>
+        </a>
+        <a href="#" class="flex items-center gap-2">
+          <img src="https://img.icons8.com/ios-filled/50/edit.png" class="w-6" />
+          <span class="hidden sm:inline">My Tasks</span>
+        </a>
+        <a href="#" class="flex items-center gap-2 font-bold">
+          <img src="https://img.icons8.com/ios-filled/50/gear.png" class="w-6" />
+          <span class="hidden sm:inline">Components</span>
+        </a>
+        <a href="#" class="flex items-center gap-2">
+          <img src="https://img.icons8.com/ios-filled/50/speech-bubble.png" class="w-6" />
+          <span class="hidden sm:inline">Messages</span>
+        </a>
+        <a href="#" class="flex items-center gap-2">
+          <img src="https://img.icons8.com/ios-filled/50/bell.png" class="w-6" />
+          <span class="hidden sm:inline">Alerts</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-6 space-y-8 overflow-y-auto">
+      <!-- Top bar -->
+      <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-bold">All Components</h1>
+        <div class="flex gap-4">
+          <img src="https://img.icons8.com/ios-glyphs/30/calendar.png" />
+          <img src="https://img.icons8.com/ios-glyphs/30/settings.png" />
+          <img src="https://img.icons8.com/ios-glyphs/30/user.png" />
+        </div>
+      </div>
+
+      <!-- All Component Cards -->
+      <div class="space-y-4">
+        {% for component in components %}
+          <div class="bg-white p-6 rounded-lg shadow flex items-center justify-between">
+            <div>
+              <h2 class="text-xl font-semibold">{{ component.name }}</h2>
+            </div>
+            <div class="w-2/3 bg-gray-200 rounded-full h-4 overflow-hidden mx-4">
+              <div class="bg-black h-full rounded-full" style="width: {{ component.progress }}%;"></div>
+            </div>
+            <span class="text-lg font-bold">{{ component.progress }}%</span>
+          </div>
+        {% empty %}
+          <p class="text-gray-500">No components found.</p>
+        {% endfor %}
+      </div>
+
+      <!-- Asset Lookup Section -->
+      <div class="bg-white p-6 rounded-lg shadow space-y-4 mt-10">
+        <h2 class="text-xl font-bold">Asset Lookup</h2>
+
+        <form method="post" enctype="multipart/form-data" class="space-y-4">
+          {% csrf_token %}
+          <input type="file" name="excel_file" accept=".xlsx" class="border p-2 rounded w-full" required />
+          <input type="text" name="asset_name" placeholder="Search by Asset Type" value="{{ search_query }}" class="border p-2 rounded w-full" />
+          <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Search</button>
+        </form>
+
+        {% if error_message %}
+          <p class="text-red-600">{{ error_message }}</p>
+        {% endif %}
+
+        {% if asset_data %}
+          <div class="overflow-x-auto border rounded bg-white">
+            <table class="table-auto w-full">
+              <thead>
+                <tr class="bg-gray-100">
+                  {% for key in asset_data.0.keys %}
+                    <th class="px-4 py-2 border">{{ key }}</th>
+                  {% endfor %}
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in asset_data %}
+                  <tr class="hover:bg-gray-50">
+                    {% for value in row.values %}
+                      <td class="border px-4 py-2">{{ value }}</td>
+                    {% endfor %}
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% elif search_query %}
+          <p class="text-yellow-700">No results found for "{{ search_query }}".</p>
+        {% endif %}
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>

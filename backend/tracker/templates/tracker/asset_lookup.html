@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Asset Lookup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-900">
+
+  <div class="p-6 max-w-6xl mx-auto">
+    <h1 class="text-3xl font-bold mb-4">Asset Lookup</h1>
+
+    <form method="post" enctype="multipart/form-data" class="mb-6 space-y-4">
+      {% csrf_token %}
+      <div>
+        <label class="block font-semibold">Upload Excel (.xlsx) Inventory File</label>
+        <input type="file" name="excel_file" accept=".xlsx" class="border p-2 rounded w-full">
+      </div>
+      <div>
+        <label class="block font-semibold">Search by Asset Name</label>
+        <input type="text" name="asset_name" placeholder="Enter asset name"
+               value="{{ search_query }}" class="border p-2 rounded w-full">
+      </div>
+      <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Upload & Search</button>
+    </form>
+
+    {% if error_message %}
+      <p class="text-red-600 font-medium">{{ error_message }}</p>
+    {% endif %}
+
+    {% if asset_data %}
+      <h2 class="text-xl font-semibold mb-2">Results{% if search_query %} for "{{ search_query }}"{% endif %}</h2>
+      <div class="overflow-x-auto border rounded bg-white">
+        <table class="table-auto w-full">
+          <thead>
+            <tr class="bg-gray-100">
+              {% for key in asset_data.0.keys %}
+                <th class="px-4 py-2 border">{{ key }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in asset_data %}
+              <tr class="hover:bg-gray-50">
+                {% for value in row.values %}
+                  <td class="border px-4 py-2">{{ value }}</td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% elif search_query %}
+      <p class="mt-4 text-yellow-600">No results found for "{{ search_query }}".</p>
+    {% endif %}
+  </div>
+
+</body>
+</html>

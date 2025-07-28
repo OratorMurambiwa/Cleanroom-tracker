@@ -1,5 +1,5 @@
 from django import forms
-from .models import Project, Component, Task, Reminder, Document
+from .models import Project, Component, Task, Reminder, Document, TravelerDocument
 from django.contrib.auth.models import User
 
 # --- Project Form ---
@@ -108,3 +108,11 @@ class TechnicianTaskSubmissionForm(forms.ModelForm):
             }),
         }
 
+
+
+class TravelerDocUploadForm(forms.ModelForm):
+    start_from = forms.IntegerField(label="Start from section number", min_value=1, required=True)
+
+    class Meta:
+        model = TravelerDocument
+        fields = ['file', 'related_project']

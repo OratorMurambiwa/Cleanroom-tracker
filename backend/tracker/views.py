@@ -5,8 +5,16 @@ from django.contrib.auth.models import Group, User
 from django.contrib import messages
 from django.db.models import Q
 from datetime import datetime
+from .forms import TravelerDocUploadForm
+import pandas as pd
+import fitz  # PyMuPDF
+import re
+import os
+import uuid
+from django.conf import settings
 from django.utils import timezone
-from .models import Task, Project, Component, Reminder
+from .models import Task, Project, Component, Reminder, InventoryUpload
+os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
 from .forms import (
 ProjectForm, ComponentForm, ReminderForm,
 DocumentForm, TeamMemberForm, TaskForm, TechnicianTaskSubmissionForm
@@ -647,7 +655,7 @@ def tech_component_detail_view(request, component_id):
     elif sort_by == 'priority':
         tasks = tasks.order_by('-priority')
 
-    return render(request, 'tracker/tech_component_detail.html', {
+    return render(request, 'tracker/tech_component_detail.htm¹l', {
         'component': component,
         'tasks': tasks,
         'search_query': search_query,
@@ -684,4 +692,161 @@ def save_extracted_tasks(request):
         return redirect('project_detail', pk=project_id)
     
     return redirect('add_tasks')
-    
+
+
+
+def extract_text_from_pdf(file_path):
+    doc = fitz.open(file_path)
+    return "\n".join(page.get_text() for page in doc)
+
+def extract_text_from_docx(file_path):
+    doc = docx.Document(file_path)
+    return "\n".join(p.text for p in doc.paragraphs if p.text.strip())
+
+
+@login_required
+def upload_tasks_from_traveler_view(request):
+    if request.method == 'POST':
+        form = TravelerDocUploadForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            start_from = form.cleaned_data['start_section']
+            uploaded_file = request.FILES['file']
+            project = form.cleaned_data['related_project']
+
+            # Save the uploaded doc temporarily
+            temp_filename = f"/tmp/{uuid.uuid4()}_{uploaded_file.name}"
+            with open(temp_filename, 'wb+') as dest:
+                for chunk in uploaded_file.chunks():
+                    dest.write(chunk)
+
+            # Extract from PDF or DOCX
+            headers = []
+            ext = os.path.splitext(uploaded_file.name)[1].lower()
+            if ext == '.pdf':
+                doc = fitz.open(temp_filename)
+                text = ""
+                for page in doc:
+                    text += page.get_text()
+                pattern = re.compile(r'^\s*(\d+(?:\.\d+)*)(?:\s+)(.+)', re.MULTILINE)
+                for match in pattern.finditer(text):
+                    number_str, title = match.groups()
+                    main_number = int(number_str.split('.')[0])
+                    if main_number >= start_from:
+                        headers.append({'title': title[:80], 'description': f"{number_str} {title}"})
+            else:
+                os.remove(temp_filename)
+                return render(request, 'tracker/upload_from_doc.html', {
+                    'form': form,
+                    'error': 'Only PDF files are supported for now.'
+                })
+
+            os.remove(temp_filename)
+
+            # Store headers in session for confirmation
+            request.session['extracted_tasks'] = headers
+            request.session['related_project_id'] = project.id
+
+            return redirect('preview_extracted_tasks')
+
+    else:
+        form = TravelerDocUploadForm()
+
+    return render(request, 'tracker/upload_from_doc.html', {'form': form})
+
+@login_required
+def preview_extracted_tasks(request):
+    headers = request.session.get('extracted_tasks', [])
+    project_id = request.session.get('related_project_id')
+
+    if request.method == 'POST':
+        for h in headers:
+            Task.objects.create(
+                title=h['title'],
+                description=h['description'],
+                project_id=project_id,
+                assigned_to=None  # You can enhance this later
+            )
+        # Clear session after saving
+        request.session.pop('extracted_tasks', None)
+        request.session.pop('related_project_id', None)
+        return redirect('assign_tasks')
+
+    return render(request, 'tracker/preview_tasks.html', {'tasks': headers})
+
+
+#view for excel file extraction
+
+# Asset Lookup View
+@login_required
+def asset_lookup_view(request):
+    asset_data = None
+    search_query = ""
+    error_message = ""
+
+    if request.method == 'POST':
+        uploaded_file = request.FILES.get('excel_file')
+        search_query = request.POST.get('asset_name', '').strip()
+
+        if uploaded_file and uploaded_file.name.endswith('.xlsx'):
+            try:
+                df = pd.read_excel(uploaded_file)
+                df.columns = df.columns.str.strip()  # Clean column names
+
+                if 'Asset Type' not in df.columns:
+                    error_message = "Excel file must contain a column named 'Asset Type'."
+                else:
+                    if search_query:
+                        filtered_df = df[df['Asset Type'].astype(str).str.lower().str.contains(search_query.lower())]
+                    else:
+                        filtered_df = df
+
+                    asset_data = filtered_df.to_dict(orient='records')
+            except Exception as e:
+                error_message = f"Error reading Excel file: {str(e)}"
+        else:
+            error_message = "Please upload a valid .xlsx file."
+
+    return render(request, 'tracker/asset_lookup.html', {
+        'asset_data': asset_data,
+        'search_query': search_query,
+        'error_message': error_message,
+    })
+
+
+# Tech Components View
+
+@login_required
+def tech_components_view(request):
+    components = Component.objects.all()
+    asset_data = None
+    search_query = ""
+    error_message = ""
+
+    if request.method == 'POST':
+        uploaded_file = request.FILES.get('excel_file')
+        search_query = request.POST.get('asset_name', '').strip()
+
+        if uploaded_file and uploaded_file.name.endswith('.xlsx'):
+            inventory_file = InventoryUpload.objects.create(file=uploaded_file)
+            file_path = inventory_file.file.path
+
+            try:
+                df = pd.read_excel(file_path)
+                df.columns = df.columns.str.strip()  # Clean up column headers
+                if search_query:
+                    filtered_df = df[df['Asset Type'].astype(str).str.lower().str.contains(search_query.lower())]
+                else:
+                    filtered_df = df
+                asset_data = filtered_df.to_dict(orient='records')
+            except Exception as e:
+                error_message = f"Error reading file: {e}"
+        else:
+            error_message = "Please upload a valid .xlsx file."
+
+    return render(request, 'tracker/tech_components.html', {
+        'components': components,
+        'asset_data': asset_data,
+        'search_query': search_query,
+        'error_message': error_message,
+    })

@@ -104,3 +104,16 @@ class Document(models.Model):
 
     def __str__(self):
         return f"Document for {self.project.name} uploaded on {self.uploaded_at}"
+
+class TravelerDocument(models.Model):
+    file = models.FileField(upload_to='traveler_docs/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    related_project = models.ForeignKey(Project, on_delete=models.CASCADE, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.file.name} - {self.uploaded_at.strftime('%Y-%m-%d')}"
+
+
+class InventoryUpload(models.Model):
+    file = models.FileField(upload_to='uploads/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
