@@ -4,23 +4,126 @@
   <title>Task Preview</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-[#fef9f9] text-gray-800 p-8">
-  <div class="max-w-3xl mx-auto bg-white p-6 rounded shadow">
-    <h2 class="text-2xl font-bold text-[#a51c30] mb-4">Preview Tasks Before Creating</h2>
-    <form method="post">
+<body class="bg-[#fef9f9] text-gray-800 p-8 font-sans">
+  <div class="max-w-4xl mx-auto bg-white p-6 rounded shadow border border-red-100">
+    <h2 class="text-2xl font-bold text-[#a51c30] mb-6">Preview Tasks Before Creating</h2>
+
+    <form method="post" id="task-form">
       {% csrf_token %}
-      <ul class="space-y-3 mb-6">
+      <ul class="space-y-4 mb-8">
         {% for task in tasks %}
-        <li class="border p-4 rounded bg-gray-50">
-          <h3 class="font-semibold">{{ task.title }}</h3>
-          <p class="text-sm text-gray-600">{{ task.description }}</p>
+        <li class="border border-gray-200 p-4 rounded bg-gray-50 relative">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h3 class="font-semibold text-lg">{{ task.title }}</h3>
+              <p class="text-sm text-gray-600">{{ task.description }}</p>
+              {% if task.section %}
+              <p class="text-xs text-gray-400 mt-1">Section {{ task.section }}</p>
+              {% endif %}
+            </div>
+            <div class="flex gap-2">
+              <a href="{% url 'edit_preview_task' index=forloop.counter0 %}" 
+                 class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-1 rounded">
+                Edit
+              </a>
+              <button type="button"
+                class="bg-green-600 hover:bg-green-700 text-white text-sm px-3 py-1 rounded"
+                onclick="openAssignModal({{ forloop.counter0 }})">Assign</button>
+            </div>
+          </div>
+
+          <!-- Hidden assignment fields -->
+          <input type="hidden" name="tasks[{{ forloop.counter0 }}][title]" value="{{ task.title }}">
+          <input type="hidden" name="tasks[{{ forloop.counter0 }}][description]" value="{{ task.description }}">
+          <input type="hidden" name="tasks[{{ forloop.counter0 }}][section]" value="{{ task.section }}">
+          <input type="hidden" name="tasks[{{ forloop.counter0 }}][user]" id="user-{{ forloop.counter0 }}">
+          <input type="hidden" name="tasks[{{ forloop.counter0 }}][due_date]" id="due-{{ forloop.counter0 }}">
+          <input type="hidden" name="tasks[{{ forloop.counter0 }}][component]" id="component-{{ forloop.counter0 }}">
+          <input type="hidden" name="tasks[{{ forloop.counter0 }}][project]" value="{{ related_project_id }}">
         </li>
         {% endfor %}
       </ul>
-      <button type="submit" class="bg-[#a51c30] text-white px-6 py-2 rounded hover:bg-red-700">
-        Confirm & Create Tasks
-      </button>
+
+      <div class="text-center">
+        <button type="submit" class="bg-[#a51c30] hover:bg-red-700 text-white font-semibold py-2 px-6 rounded">
+          Confirm & Create Tasks
+        </button>
+      </div>
     </form>
   </div>
+
+  <!-- Assignment Modal -->
+  <div id="assignModal" class="fixed inset-0 bg-black bg-opacity-40 hidden flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-md w-full max-w-md shadow-md">
+      <h3 class="text-xl font-bold mb-4 text-[#a51c30]">Assign Task</h3>
+
+      <div class="space-y-4">
+        <!-- Technician Dropdown -->
+        <div>
+          <label class="block text-sm font-semibold mb-1">Assign To</label>
+          <select id="modal-user" class="w-full border border-gray-300 p-2 rounded" autocomplete="off">
+            {% for user in users %}
+              <option value="{{ user.id }}">{{ user.get_full_name }}</option>
+            {% empty %}
+              <option disabled selected>No technicians available</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Due Date -->
+        <div>
+          <label class="block text-sm font-semibold mb-1">Due Date</label>
+          <input type="date" id="modal-due" class="w-full border border-gray-300 p-2 rounded" autocomplete="off">
+        </div>
+
+        <!-- Component Dropdown -->
+        <div>
+          <label class="block text-sm font-semibold mb-1">Component</label>
+          <select id="modal-component" class="w-full border border-gray-300 p-2 rounded" autocomplete="off">
+            {% for component in components %}
+              <option value="{{ component.id }}">{{ component.name }}</option>
+            {% empty %}
+              <option disabled selected>No active components found</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="mt-6 flex justify-end gap-2">
+        <button type="button" onclick="closeAssignModal()" class="px-4 py-2 border border-gray-300 rounded">Cancel</button>
+        <button type="button" onclick="saveAssignment()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS for modal assignment -->
+  <script>
+    let currentTaskIndex = null;
+
+    function openAssignModal(index) {
+      currentTaskIndex = index;
+      document.getElementById('assignModal').classList.remove('hidden');
+    }
+
+    function closeAssignModal() {
+      document.getElementById('assignModal').classList.add('hidden');
+      currentTaskIndex = null;
+    }
+
+    function saveAssignment() {
+      if (currentTaskIndex !== null) {
+        const userVal = document.getElementById('modal-user').value;
+        const dueVal = document.getElementById('modal-due').value;
+        const compVal = document.getElementById('modal-component').value;
+
+        document.getElementById(`user-${currentTaskIndex}`).value = userVal;
+        document.getElementById(`due-${currentTaskIndex}`).value = dueVal;
+        document.getElementById(`component-${currentTaskIndex}`).value = compVal;
+      }
+      closeAssignModal();
+    }
+  </script>
 </body>
 </html>

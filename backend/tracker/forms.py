@@ -110,9 +110,8 @@ class TechnicianTaskSubmissionForm(forms.ModelForm):
 
 
 
-class TravelerDocUploadForm(forms.ModelForm):
-    start_from = forms.IntegerField(label="Start from section number", min_value=1, required=True)
-
-    class Meta:
-        model = TravelerDocument
-        fields = ['file', 'related_project']
+class TravelerDocUploadForm(forms.Form):
+    file = forms.FileField()
+    related_project = forms.ModelChoiceField(queryset=Project.objects.all(), required=False)
+    start_section = forms.IntegerField(min_value=1)
+    end_section = forms.IntegerField(min_value=1)

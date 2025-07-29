@@ -13,7 +13,7 @@ import os
 import uuid
 from django.conf import settings
 from django.utils import timezone
-from .models import Task, Project, Component, Reminder, InventoryUpload
+from .models import Task, Project, Component, Reminder, InventoryUpload, LookupHistory
 os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
 from .forms import (
 ProjectForm, ComponentForm, ReminderForm,
@@ -704,75 +704,6 @@ def extract_text_from_docx(file_path):
     return "\n".join(p.text for p in doc.paragraphs if p.text.strip())
 
 
-@login_required
-def upload_tasks_from_traveler_view(request):
-    if request.method == 'POST':
-        form = TravelerDocUploadForm(request.POST, request.FILES)
-
-        if form.is_valid():
-            start_from = form.cleaned_data['start_section']
-            uploaded_file = request.FILES['file']
-            project = form.cleaned_data['related_project']
-
-            # Save the uploaded doc temporarily
-            temp_filename = f"/tmp/{uuid.uuid4()}_{uploaded_file.name}"
-            with open(temp_filename, 'wb+') as dest:
-                for chunk in uploaded_file.chunks():
-                    dest.write(chunk)
-
-            # Extract from PDF or DOCX
-            headers = []
-            ext = os.path.splitext(uploaded_file.name)[1].lower()
-            if ext == '.pdf':
-                doc = fitz.open(temp_filename)
-                text = ""
-                for page in doc:
-                    text += page.get_text()
-                pattern = re.compile(r'^\s*(\d+(?:\.\d+)*)(?:\s+)(.+)', re.MULTILINE)
-                for match in pattern.finditer(text):
-                    number_str, title = match.groups()
-                    main_number = int(number_str.split('.')[0])
-                    if main_number >= start_from:
-                        headers.append({'title': title[:80], 'description': f"{number_str} {title}"})
-            else:
-                os.remove(temp_filename)
-                return render(request, 'tracker/upload_from_doc.html', {
-                    'form': form,
-                    'error': 'Only PDF files are supported for now.'
-                })
-
-            os.remove(temp_filename)
-
-            # Store headers in session for confirmation
-            request.session['extracted_tasks'] = headers
-            request.session['related_project_id'] = project.id
-
-            return redirect('preview_extracted_tasks')
-
-    else:
-        form = TravelerDocUploadForm()
-
-    return render(request, 'tracker/upload_from_doc.html', {'form': form})
-
-@login_required
-def preview_extracted_tasks(request):
-    headers = request.session.get('extracted_tasks', [])
-    project_id = request.session.get('related_project_id')
-
-    if request.method == 'POST':
-        for h in headers:
-            Task.objects.create(
-                title=h['title'],
-                description=h['description'],
-                project_id=project_id,
-                assigned_to=None  # You can enhance this later
-            )
-        # Clear session after saving
-        request.session.pop('extracted_tasks', None)
-        request.session.pop('related_project_id', None)
-        return redirect('assign_tasks')
-
-    return render(request, 'tracker/preview_tasks.html', {'tasks': headers})
 
 
 #view for excel file extraction
@@ -814,39 +745,176 @@ def asset_lookup_view(request):
     })
 
 
-# Tech Components View
-
+#tech component view
 @login_required
 def tech_components_view(request):
     components = Component.objects.all()
     asset_data = None
     search_query = ""
+    search_field = "Asset Type"
     error_message = ""
+    file_uploaded = False
+    last_file_url = None
+    last_file_name = None
+    recent_lookups = []
 
     if request.method == 'POST':
         uploaded_file = request.FILES.get('excel_file')
         search_query = request.POST.get('asset_name', '').strip()
+        search_field = request.POST.get('search_field', 'Asset Type').strip()
 
         if uploaded_file and uploaded_file.name.endswith('.xlsx'):
             inventory_file = InventoryUpload.objects.create(file=uploaded_file)
             file_path = inventory_file.file.path
+            file_uploaded = True
+            last_file_url = inventory_file.file.url
+            last_file_name = uploaded_file.name
+        else:
+            try:
+                latest_file = InventoryUpload.objects.latest('uploaded_at')
+                file_path = latest_file.file.path
+                file_uploaded = True
+                last_file_url = latest_file.file.url
+                last_file_name = os.path.basename(latest_file.file.name)
+            except InventoryUpload.DoesNotExist:
+                error_message = "No Excel file found. Please upload one."
+                file_path = None
 
+        if file_path:
             try:
                 df = pd.read_excel(file_path)
-                df.columns = df.columns.str.strip()  # Clean up column headers
-                if search_query:
-                    filtered_df = df[df['Asset Type'].astype(str).str.lower().str.contains(search_query.lower())]
+                df.columns = df.columns.str.strip()
+
+                if search_query and search_field in df.columns:
+                    col_data = df[search_field].astype(str).str.strip()
+                    if search_field == "Assembly number (Description)":
+                        # Exact match (case-insensitive)
+                        filtered_df = df[col_data.str.lower() == search_query.lower()]
+                    else:
+                        # Partial match
+                        filtered_df = df[col_data.str.lower().str.contains(search_query.lower())]
                 else:
                     filtered_df = df
+
                 asset_data = filtered_df.to_dict(orient='records')
+
+                if search_query:
+                    LookupHistory.objects.create(user=request.user, query=search_query)
+                recent_lookups = LookupHistory.objects.filter(user=request.user).order_by('-timestamp')[:5]
+
             except Exception as e:
                 error_message = f"Error reading file: {e}"
-        else:
-            error_message = "Please upload a valid .xlsx file."
 
     return render(request, 'tracker/tech_components.html', {
         'components': components,
         'asset_data': asset_data,
         'search_query': search_query,
+        'search_field': search_field,
+        'file_uploaded': file_uploaded,
+        'last_file_url': last_file_url,
+        'last_file_name': last_file_name,
+        'recent_lookups': recent_lookups,
         'error_message': error_message,
     })
+
+@login_required
+def upload_tasks_from_traveler_view(request):
+    if request.method == 'POST':
+        form = TravelerDocUploadForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            start_from = form.cleaned_data['start_section']
+            end_at = form.cleaned_data['end_section']
+            uploaded_file = request.FILES['file']
+            project = form.cleaned_data['related_project']
+
+            temp_filename = f"/tmp/{uuid.uuid4()}_{uploaded_file.name}"
+            with open(temp_filename, 'wb+') as dest:
+                for chunk in uploaded_file.chunks():
+                    dest.write(chunk)
+
+            headers = []
+            ext = os.path.splitext(uploaded_file.name)[1].lower()
+
+            if ext == '.pdf':
+                doc = fitz.open(temp_filename)
+                text = "".join(page.get_text() for page in doc)
+
+                pattern = re.compile(r'^\s*(\d+(?:\.\d+)*)(?:\s+)(.+)', re.MULTILINE)
+                for match in pattern.finditer(text):
+                    number_str, title = match.groups()
+                    try:
+                        main_number = int(number_str.split('.')[0])
+                        if start_from <= main_number <= end_at:
+                            headers.append({
+                                'title': title[:80],
+                                'description': f"{number_str} {title}",
+                                'section': main_number
+                            })
+                    except ValueError:
+                        continue
+            else:
+                os.remove(temp_filename)
+                return render(request, 'tracker/upload_from_doc.html', {
+                    'form': form,
+                    'error': 'Only PDF files are supported for now.'
+                })
+
+            os.remove(temp_filename)
+
+            request.session['extracted_tasks'] = headers
+            request.session['related_project_id'] = project.id if project else None
+
+            return redirect('preview_extracted_tasks')
+
+    else:
+        form = TravelerDocUploadForm()
+
+    return render(request, 'tracker/upload_from_doc.html', {'form': form})
+
+
+@login_required
+def preview_extracted_tasks(request):
+    headers = request.session.get('extracted_tasks', [])
+    project_id = request.session.get('related_project_id')
+
+    # ✅ Get all users in the "Technician" group
+    try:
+        tech_group = Group.objects.get(name="technician")
+        techs = tech_group.user_set.all()
+    except Group.DoesNotExist:
+        techs = []
+
+    # ✅ Get only active components (adjust field name if needed)
+    components = Component.objects.filter(status="ongoing")  # or .filter(is_active=True)
+
+    return render(request, 'tracker/preview_tasks.html', {
+        'tasks': headers,
+        'users': techs,
+        'components': components,
+        'related_project_id': project_id,
+    })
+
+
+
+@login_required
+def edit_preview_task(request, index):
+    tasks = request.session.get('extracted_tasks', [])
+
+    if index >= len(tasks):
+        messages.error(request, "Invalid task index.")
+        return redirect('preview_extracted_tasks')
+
+    if request.method == 'POST':
+        # Update the task in the session
+        tasks[index]['title'] = request.POST.get('title', tasks[index]['title'])
+        tasks[index]['description'] = request.POST.get('description', tasks[index]['description'])
+        tasks[index]['section'] = request.POST.get('section', tasks[index].get('section'))
+
+        request.session['extracted_tasks'] = tasks
+        messages.success(request, "Task updated successfully.")
+        return redirect('preview_extracted_tasks')
+
+    task = tasks[index]
+    return render(request, 'tracker/edit_preview_task.html', {'task': task, 'index': index})
+

@@ -32,6 +32,20 @@
         {{ form.related_project }}
       </div>
 
+      <div class="flex flex-col sm:flex-row gap-4">
+        <div class="w-full">
+          <label for="start_section" class="block mb-2 font-semibold text-sm text-gray-700">Start Section Number</label>
+          <input type="number" name="start_section" id="start_section" placeholder="e.g. 4" min="1" required
+            class="w-full p-2 border border-gray-300 rounded-md" />
+        </div>
+
+        <div class="w-full">
+          <label for="end_section" class="block mb-2 font-semibold text-sm text-gray-700">End Section Number</label>
+          <input type="number" name="end_section" id="end_section" placeholder="e.g. 12" min="1" required
+            class="w-full p-2 border border-gray-300 rounded-md" />
+        </div>
+      </div>
+
       <button type="submit" class="w-full bg-[#a51c30] text-white py-2 rounded-md hover:bg-red-700 transition">
         Upload & Extract Tasks
       </button>
@@ -40,4 +54,3 @@
 
 </body>
 </html>
-

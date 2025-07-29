@@ -37,15 +37,18 @@ urlpatterns = [
 
     # Tasks
     path('assign_tasks/', views.assign_tasks_view, name='assign_tasks'),
-    path('my-tasks/', views.tech_tasks_view, name='tech_tasks'),  # ✅ renamed from tech_task_list to tech_tasks
+    path('my-tasks/', views.tech_tasks_view, name='tech_tasks'),  
     path('tasks/<int:task_id>/', views.task_detail_view, name='task_detail'),
     path('tasks/<int:task_id>/edit/', views.edit_task_view, name='edit_task'),
     path('tasks/<int:task_id>/submit/', views.submit_task, name='submit_task'),
     path('submit_task/<int:task_id>/', views.submit_task, name='submit_task'),
     path('tasks/<int:task_id>/approve/', views.approve_task, name='approve_task'),
     path('components/<int:component_id>/assign-task/', views.assign_tasks_view, name='assign_task_component'),
-
+    path('upload-doc-tasks/', views.upload_tasks_from_traveler_view, name='upload_doc_tasks'),
+    path('preview-extracted-tasks/', views.preview_extracted_tasks, name='preview_extracted_tasks'),  
+    path('save-extracted-tasks/', views.save_extracted_tasks, name='save_extracted_tasks'),
     path('tasks/<int:task_id>/review/', views.review_task_for_approval, name='review_task_for_approval'),
+    path('preview-edit-task/<int:index>/', views.edit_preview_task, name='edit_preview_task'),
     path('tasks/save-extracted/', views.save_extracted_tasks, name='save_extracted_tasks'),
 
     # Components

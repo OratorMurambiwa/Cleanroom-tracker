@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Edit Task Preview</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 p-8 font-sans">
+  <div class="max-w-xl mx-auto bg-white p-6 rounded shadow border border-gray-200">
+    <h2 class="text-xl font-bold text-[#a51c30] mb-4">Edit Task</h2>
+
+    <form method="post">
+      {% csrf_token %}
+      
+      <div class="mb-4">
+        <label class="block text-sm font-semibold mb-1">Title</label>
+        <input type="text" name="title" value="{{ task.title }}" required
+               class="w-full p-2 border rounded border-gray-300">
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-sm font-semibold mb-1">Description</label>
+        <textarea name="description" rows="3" required
+                  class="w-full p-2 border rounded border-gray-300">{{ task.description }}</textarea>
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-sm font-semibold mb-1">Section (optional)</label>
+        <input type="number" name="section" value="{{ task.section }}"
+               class="w-full p-2 border rounded border-gray-300">
+      </div>
+
+      <div class="flex justify-between mt-6">
+        <a href="{% url 'preview_extracted_tasks' %}" class="text-sm text-gray-600 hover:underline">
+          Cancel
+        </a>
+        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
+          Save Changes
+        </button>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

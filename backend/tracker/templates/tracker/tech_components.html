@@ -70,17 +70,47 @@
 
         <form method="post" enctype="multipart/form-data" class="space-y-4">
           {% csrf_token %}
-          <input type="file" name="excel_file" accept=".xlsx" class="border p-2 rounded w-full" required />
-          <input type="text" name="asset_name" placeholder="Search by Asset Type" value="{{ search_query }}" class="border p-2 rounded w-full" />
-          <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Search</button>
+          <label class="block text-sm font-medium text-gray-700">Upload Excel File (.xlsx)</label>
+          <input type="file" name="excel_file" accept=".xlsx" class="border p-2 rounded w-full" />
+
+          <label class="block text-sm font-medium text-gray-700">Search Field</label>
+          <select name="search_field" class="border p-2 rounded w-full">
+            <option value="Asset Type" {% if search_field == "Asset Type" %}selected{% endif %}>Asset Type</option>
+            <option value="Assembly Number" {% if search_field == "Assembly Number (Description)" %}selected{% endif %}>Assembly Number</option>
+          </select>
+
+          <label class="block text-sm font-medium text-gray-700">Search Query</label>
+          <input type="text" name="asset_name" placeholder="e.g. BTM1234" value="{{ search_query }}" class="border p-2 rounded w-full" />
+
+          <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 w-full">Search</button>
         </form>
 
+        {% if file_uploaded and last_file_url %}
+          <p class="text-green-700 text-sm">
+            Using last uploaded file:
+            <a href="{{ last_file_url }}" class="text-blue-700 underline" target="_blank">
+              {{ last_file_name }}
+            </a>
+          </p>
+        {% endif %}
+
         {% if error_message %}
-          <p class="text-red-600">{{ error_message }}</p>
+          <p class="text-red-600 font-semibold">{{ error_message }}</p>
+        {% endif %}
+
+        {% if recent_lookups %}
+          <div class="mt-4">
+            <h3 class="font-semibold">Recent Lookups:</h3>
+            <ul class="list-disc list-inside text-sm text-gray-700">
+              {% for lookup in recent_lookups %}
+                <li>{{ lookup.query }} ({{ lookup.timestamp|date:"M d, H:i" }})</li>
+              {% endfor %}
+            </ul>
+          </div>
         {% endif %}
 
         {% if asset_data %}
-          <div class="overflow-x-auto border rounded bg-white">
+          <div class="overflow-x-auto border rounded bg-white mt-6">
             <table class="table-auto w-full">
               <thead>
                 <tr class="bg-gray-100">
@@ -101,7 +131,7 @@
             </table>
           </div>
         {% elif search_query %}
-          <p class="text-yellow-700">No results found for "{{ search_query }}".</p>
+          <p class="text-yellow-700 mt-4">No results found for "<strong>{{ search_query }}</strong>".</p>
         {% endif %}
       </div>
     </main>
