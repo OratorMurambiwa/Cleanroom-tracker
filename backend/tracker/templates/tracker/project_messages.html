@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Messages</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans leading-normal tracking-normal">
+
+  <div class="max-w-3xl mx-auto mt-10 bg-white rounded-lg shadow p-6">
+    <h2 class="text-2xl font-bold mb-6 text-gray-800">
+      Messages for "{{ project.name }}"
+    </h2>
+
+    <div class="space-y-4 max-h-96 overflow-y-auto border p-4 rounded bg-gray-50">
+      {% for msg in messages %}
+        <div class="border-b pb-3">
+          <div class="text-sm text-gray-500 mb-1">
+            <strong class="text-gray-800">{{ msg.sender.username }}</strong> — {{ msg.timestamp|date:"M d, Y H:i" }}
+          </div>
+          <p class="text-gray-700">{{ msg.body }}</p>
+        </div>
+      {% empty %}
+        <p class="text-gray-500">No messages yet.</p>
+      {% endfor %}
+    </div>
+
+    <form method="post" class="mt-6">
+      {% csrf_token %}
+      <label class="block mb-2 text-sm font-medium text-gray-700">New Message</label>
+      {{ form.body }}
+      <button type="submit" class="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+        Send
+      </button>
+    </form>
+
+    <div class="mt-6">
+      <a href="{% url 'project_detail' project.id %}" class="text-blue-600 hover:underline text-sm">← Back to Project</a>
+    </div>
+  </div>
+
+</body>
+</html>

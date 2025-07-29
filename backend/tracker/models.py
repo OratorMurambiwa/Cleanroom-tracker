@@ -127,3 +127,22 @@ class LookupHistory(models.Model):
 
     def __str__(self):
         return f"{self.user.username} searched: {self.query}"
+
+#----------------------------Messaging----------------------------------------
+
+
+class MessageThread(models.Model):
+    project = models.ForeignKey('Project', on_delete=models.CASCADE, related_name='threads')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Thread for Project: {self.project.name}"
+
+class Message(models.Model):
+    thread = models.ForeignKey(MessageThread, on_delete=models.CASCADE, related_name='messages')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE)
+    body = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"From {self.sender.username} at {self.timestamp}"

@@ -15,10 +15,10 @@ import os
 import uuid
 from django.conf import settings
 from django.utils import timezone
-from .models import Task, Project, Component, Reminder, InventoryUpload, LookupHistory
+from .models import Task, Project, Component, Reminder, InventoryUpload, LookupHistory, Message, MessageThread
 os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
 from .forms import (
-ProjectForm, ComponentForm, ReminderForm,
+ProjectForm, ComponentForm, ReminderForm, MessageForm,
 DocumentForm, TeamMemberForm, TaskForm, TechnicianTaskSubmissionForm, TravelerDocUploadForm
 )
 
@@ -1032,3 +1032,31 @@ def assign_single_task(request):
             return JsonResponse({'success': False, 'error': str(e)})
 
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+#-----------------------------Messages Views-----------------------------------------
+
+@login_required
+def project_messages_view(request, project_id):
+    project = get_object_or_404(Project, id=project_id)
+    thread, created = MessageThread.objects.get_or_create(project=project)
+
+    messages = thread.messages.order_by('timestamp')
+    if request.method == 'POST':
+        form = MessageForm(request.POST)
+        if form.is_valid():
+            message = form.save(commit=False)
+            message.thread = thread
+            message.sender = request.user
+            message.save()
+            return redirect('project_messages', project_id=project.id)  # 👈 use URL name here
+    else:
+        form = MessageForm()
+
+    return render(request, 'tracker/project_messages.html', {
+        'project': project,
+        'messages': messages,
+        'form': form,
+    })
+
+

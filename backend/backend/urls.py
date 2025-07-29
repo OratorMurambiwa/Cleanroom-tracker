@@ -70,6 +70,7 @@ urlpatterns = [
     path('calendar/', views.calendar_view, name='calendar'),
     path('upload-doc-tasks/', views.upload_tasks_from_traveler_view, name='upload_tasks_from_traveler'),
     path('asset-lookup/', asset_lookup_view, name='asset_lookup'),
+    path('projects/<int:project_id>/messages/', views.project_messages_view, name='project_messages'),
     path('create_reminder/', views.create_reminder, name='create_reminder'),
 ]
 

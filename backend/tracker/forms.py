@@ -1,6 +1,7 @@
 from django import forms
 from .models import Project, Component, Task, Reminder, Document, TravelerDocument
 from django.contrib.auth.models import User
+from .models import Message
 
 # --- Project Form ---
 class ProjectForm(forms.ModelForm):
@@ -132,3 +133,13 @@ class TravelerDocUploadForm(forms.Form):
         label="End Page (Optional)",
         help_text="End extracting at this page (1-based index)"
     )
+
+
+
+class MessageForm(forms.ModelForm):
+    class Meta:
+        model = Message
+        fields = ['body']
+        widgets = {
+            'body': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Type your message...'}),
+        }
