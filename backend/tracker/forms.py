@@ -110,8 +110,25 @@ class TechnicianTaskSubmissionForm(forms.ModelForm):
 
 
 
+
 class TravelerDocUploadForm(forms.Form):
-    file = forms.FileField()
-    related_project = forms.ModelChoiceField(queryset=Project.objects.all(), required=False)
-    start_section = forms.IntegerField(min_value=1)
-    end_section = forms.IntegerField(min_value=1)
+    file = forms.FileField(label="Traveler Document")
+    start_section = forms.IntegerField(label="Start Section")
+    end_section = forms.IntegerField(label="End Section")
+    related_project = forms.ModelChoiceField(
+        queryset=Project.objects.all(),
+        required=False,
+        label="Related Project"
+    )
+    start_page = forms.IntegerField(
+        required=False,
+        min_value=1,
+        label="Start Page (Optional)",
+        help_text="Start extracting from this page (1-based index)"
+    )
+    end_page = forms.IntegerField(
+        required=False,
+        min_value=1,
+        label="End Page (Optional)",
+        help_text="End extracting at this page (1-based index)"
+    )

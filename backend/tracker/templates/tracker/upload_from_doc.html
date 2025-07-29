@@ -9,10 +9,9 @@
   <style>
     .font-playfair { font-family: 'Playfair Display', serif; }
     .font-inter { font-family: 'Inter', sans-serif; }
-    body { @apply font-inter bg-gradient-to-br from-[#f4e7e5] to-[#f0d9d6]; }
   </style>
 </head>
-<body class="min-h-screen flex items-center justify-center px-4">
+<body class="min-h-screen bg-gradient-to-br from-[#f4e7e5] to-[#f0d9d6] flex items-center justify-center px-4 font-inter">
 
   <div class="max-w-xl w-full bg-white p-8 rounded-xl shadow-md border border-[#e7c2c4] mt-10">
     <h2 class="text-2xl font-playfair font-bold text-[#a51c30] mb-6 text-center">
@@ -23,30 +22,40 @@
       {% csrf_token %}
 
       <div>
-        <label for="id_file" class="block mb-2 font-semibold text-sm text-gray-700">Traveler Document (PDF or DOCX)</label>
+        <label for="id_file" class="block mb-2 text-sm font-semibold text-gray-700">Traveler Document (PDF or DOCX)</label>
         {{ form.file }}
       </div>
 
       <div>
-        <label for="id_related_project" class="block mb-2 font-semibold text-sm text-gray-700">Related Project (optional)</label>
+        <label for="id_related_project" class="block mb-2 text-sm font-semibold text-gray-700">Related Project (optional)</label>
         {{ form.related_project }}
       </div>
 
       <div class="flex flex-col sm:flex-row gap-4">
         <div class="w-full">
-          <label for="start_section" class="block mb-2 font-semibold text-sm text-gray-700">Start Section Number</label>
-          <input type="number" name="start_section" id="start_section" placeholder="e.g. 4" min="1" required
-            class="w-full p-2 border border-gray-300 rounded-md" />
+          <label for="start_section" class="block mb-2 text-sm font-semibold text-gray-700">Start Section Number</label>
+          {{ form.start_section }}
         </div>
-
         <div class="w-full">
-          <label for="end_section" class="block mb-2 font-semibold text-sm text-gray-700">End Section Number</label>
-          <input type="number" name="end_section" id="end_section" placeholder="e.g. 12" min="1" required
-            class="w-full p-2 border border-gray-300 rounded-md" />
+          <label for="end_section" class="block mb-2 text-sm font-semibold text-gray-700">End Section Number</label>
+          {{ form.end_section }}
         </div>
       </div>
 
-      <button type="submit" class="w-full bg-[#a51c30] text-white py-2 rounded-md hover:bg-red-700 transition">
+      <div class="flex flex-col sm:flex-row gap-4">
+        <div class="w-full">
+          <label for="start_page" class="block mb-2 text-sm font-semibold text-gray-700">Start Page (Optional)</label>
+          {{ form.start_page }}
+        </div>
+        <div class="w-full">
+          <label for="end_page" class="block mb-2 text-sm font-semibold text-gray-700">End Page (Optional)</label>
+          {{ form.end_page }}
+        </div>
+      </div>
+
+      <p class="text-xs text-gray-500 mt-1">Leave page range blank to extract from all pages. Page numbers start from 1 (not 0).</p>
+
+      <button type="submit" class="w-full bg-[#a51c30] text-white py-2 rounded-md hover:bg-[#881622] transition">
         Upload & Extract Tasks
       </button>
     </form>

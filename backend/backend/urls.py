@@ -50,6 +50,7 @@ urlpatterns = [
     path('tasks/<int:task_id>/review/', views.review_task_for_approval, name='review_task_for_approval'),
     path('preview-edit-task/<int:index>/', views.edit_preview_task, name='edit_preview_task'),
     path('assign-task/', views.assign_single_task, name='assign_single_task'),
+    path('tasks/<int:task_id>/delete/', views.delete_task_view, name='delete_task'),
     path('tasks/save-extracted/', views.save_extracted_tasks, name='save_extracted_tasks'),
 
     # Components

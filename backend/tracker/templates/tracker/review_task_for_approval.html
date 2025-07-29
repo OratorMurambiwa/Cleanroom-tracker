@@ -113,6 +113,14 @@
       </div>
     </form>
 
+    <form method="POST" action="{% url 'delete_task' task.id %}" onsubmit="return confirm('Are you sure you want to delete this task?');">
+      {% csrf_token %}
+      <button type="submit" class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800 mt-4">
+        🗑️ Delete Task
+      </button>
+    </form>
+
+
 
     <div class="mt-6">
       <a href="{% url 'project_detail' task.project.id %}" class="text-sm text-gray-600 hover:underline">← Back to Project</a>

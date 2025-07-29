@@ -549,6 +549,18 @@ def add_tasks_view(request, project_id):
         'components': components,
         'extracted_tasks': extracted_tasks
     })
+
+#delete tasks
+def delete_task_view(request, task_id):
+    task = get_object_or_404(Task, id=task_id)
+
+    if request.method == 'POST':
+        project_id = task.project.id  # store for redirect
+        task.delete()
+        messages.success(request, 'Task deleted successfully.')
+        return redirect('project_detail', project_id=project_id)
+
+    return redirect('task_detail', task_id=task_id)
     
 
 @login_required
@@ -819,6 +831,7 @@ def tech_components_view(request):
         'error_message': error_message,
     })
 
+# ----------------------- Upload Traveler View -----------------------
 @login_required
 def upload_tasks_from_traveler_view(request):
     if request.method == 'POST':
@@ -829,6 +842,8 @@ def upload_tasks_from_traveler_view(request):
             end_at = form.cleaned_data['end_section']
             uploaded_file = request.FILES['file']
             project = form.cleaned_data['related_project']
+            start_page = form.cleaned_data.get('start_page')
+            end_page = form.cleaned_data.get('end_page')
 
             temp_filename = f"/tmp/{uuid.uuid4()}_{uploaded_file.name}"
             with open(temp_filename, 'wb+') as dest:
@@ -840,23 +855,68 @@ def upload_tasks_from_traveler_view(request):
 
             if ext == '.pdf':
                 doc = fitz.open(temp_filename)
-                text = "".join(page.get_text() for page in doc)
 
-                pattern = re.compile(r'^\s*(\d+(?:\.\d+)*)(?:\s+)(.+)', re.MULTILINE)
-                for match in pattern.finditer(text):
-                    number_str, title = match.groups()
-                    try:
-                        main_number = int(number_str.split('.')[0])
-                        if start_from <= main_number <= end_at:
-                            clean_title = title.strip().rstrip('.').strip()
-                            clean_desc = f"{number_str} {title}".strip().rstrip('.').strip()
+                # Convert to 0-based indexing
+                if start_page is not None and end_page is not None:
+                    start_page = max(0, start_page - 1)
+                    end_page = max(0, end_page - 1)
+                    pages_to_read = doc[start_page:end_page + 1]
+                    page_range_offset = start_page
+                else:
+                    pages_to_read = doc
+                    page_range_offset = 0
+
+                current_section = None
+                current_step = None
+
+                for page_index, page in enumerate(pages_to_read):
+                    lines = page.get_text("text").splitlines()
+                    actual_page_number = page_range_offset + page_index + 1  # for display
+
+                    for line in lines:
+                        line = line.strip()
+
+                        match_section = re.match(r'^(\d+(?:\.\d+)*)\s+(.*)', line)
+                        match_step = re.match(r'^(\d+)\.\s+(.*)', line)
+                        match_sub = re.match(r'^([a-zA-Z])\.\s+(.*)', line)
+
+                        if match_section:
+                            sec_num, title = match_section.groups()
+                            try:
+                                if int(sec_num.split('.')[0]) in range(start_from, end_at + 1):
+                                    current_section = sec_num
+                                    current_step = None
+                                    headers.append({
+                                        'title': title.strip()[:80],
+                                        'description': f"{sec_num} {title}",
+                                        'section': sec_num,
+                                        'page': actual_page_number
+                                    })
+                            except:
+                                continue
+
+                        elif match_step and current_section:
+                            step_num, title = match_step.groups()
+                            current_step = step_num
+                            full_id = f"{current_section}.{step_num}"
                             headers.append({
-                                'title': clean_title[:80],
-                                'description': clean_desc,
-                                'section': main_number
+                                'title': title.strip()[:80],
+                                'description': f"{full_id} {title}",
+                                'section': full_id,
+                                'page': actual_page_number
                             })
-                    except ValueError:
-                        continue
+
+                        elif match_sub and current_section and current_step:
+                            sub_letter, text = match_sub.groups()
+                            full_id = f"{current_section}.{current_step}.{sub_letter}"
+                            headers.append({
+                                'title': text.strip()[:80],
+                                'description': f"{full_id} {text}",
+                                'section': full_id,
+                                'page': actual_page_number
+                            })
+
+                doc.close()
             else:
                 os.remove(temp_filename)
                 return render(request, 'tracker/upload_from_doc.html', {
@@ -866,7 +926,6 @@ def upload_tasks_from_traveler_view(request):
 
             os.remove(temp_filename)
 
-            # ✅ REMOVE duplicates here (based on clean title + section)
             seen = set()
             cleaned_headers = []
             for task in headers:
@@ -893,23 +952,19 @@ def preview_extracted_tasks(request):
     project_id = request.session.get('related_project_id')
     project = Project.objects.get(id=project_id) if project_id else None
 
-    # Clean up duplicate tasks or tasks with just dots
     seen_titles = set()
     cleaned_tasks = []
     for task in tasks:
-        title = task.get('title', '').strip().rstrip('.').strip()
+        title = task.get('title', '').strip().rstrip('.')
         description = task.get('description', '').strip()
-
-        # Skip if only dots or already seen
         if not title or title in seen_titles or title.endswith('...'):
             continue
-
         seen_titles.add(title)
         task['title'] = title
         task['description'] = description
         cleaned_tasks.append(task)
 
-    request.session['extracted_tasks'] = cleaned_tasks  # update session with cleaned tasks
+    request.session['extracted_tasks'] = cleaned_tasks
 
     users = User.objects.filter(groups__name="technician")
     components = Component.objects.filter(status='ongoing')
@@ -922,7 +977,6 @@ def preview_extracted_tasks(request):
     })
 
 
-
 @login_required
 def edit_preview_task(request, index):
     tasks = request.session.get('extracted_tasks', [])
@@ -932,7 +986,6 @@ def edit_preview_task(request, index):
         return redirect('preview_extracted_tasks')
 
     if request.method == 'POST':
-        # Update the task in the session
         tasks[index]['title'] = request.POST.get('title', tasks[index]['title'])
         tasks[index]['description'] = request.POST.get('description', tasks[index]['description'])
         tasks[index]['section'] = request.POST.get('section', tasks[index].get('section'))
@@ -943,8 +996,6 @@ def edit_preview_task(request, index):
 
     task = tasks[index]
     return render(request, 'tracker/edit_preview_task.html', {'task': task, 'index': index})
-
-# views.py
 
 
 @csrf_exempt
@@ -981,4 +1032,3 @@ def assign_single_task(request):
             return JsonResponse({'success': False, 'error': str(e)})
 
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
-
