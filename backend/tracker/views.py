@@ -5,7 +5,9 @@ from django.contrib.auth.models import Group, User
 from django.contrib import messages
 from django.db.models import Q
 from datetime import datetime
-from .forms import TravelerDocUploadForm
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
 import pandas as pd
 import fitz  # PyMuPDF
 import re
@@ -17,7 +19,7 @@ from .models import Task, Project, Component, Reminder, InventoryUpload, LookupH
 os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
 from .forms import (
 ProjectForm, ComponentForm, ReminderForm,
-DocumentForm, TeamMemberForm, TaskForm, TechnicianTaskSubmissionForm
+DocumentForm, TeamMemberForm, TaskForm, TechnicianTaskSubmissionForm, TravelerDocUploadForm
 )
 
 # ----------------------- Utility Helpers -----------------------
@@ -846,9 +848,11 @@ def upload_tasks_from_traveler_view(request):
                     try:
                         main_number = int(number_str.split('.')[0])
                         if start_from <= main_number <= end_at:
+                            clean_title = title.strip().rstrip('.').strip()
+                            clean_desc = f"{number_str} {title}".strip().rstrip('.').strip()
                             headers.append({
-                                'title': title[:80],
-                                'description': f"{number_str} {title}",
+                                'title': clean_title[:80],
+                                'description': clean_desc,
                                 'section': main_number
                             })
                     except ValueError:
@@ -862,7 +866,16 @@ def upload_tasks_from_traveler_view(request):
 
             os.remove(temp_filename)
 
-            request.session['extracted_tasks'] = headers
+            # ✅ REMOVE duplicates here (based on clean title + section)
+            seen = set()
+            cleaned_headers = []
+            for task in headers:
+                key = (task['title'], task['section'])
+                if key not in seen:
+                    seen.add(key)
+                    cleaned_headers.append(task)
+
+            request.session['extracted_tasks'] = cleaned_headers
             request.session['related_project_id'] = project.id if project else None
 
             return redirect('preview_extracted_tasks')
@@ -873,26 +886,39 @@ def upload_tasks_from_traveler_view(request):
     return render(request, 'tracker/upload_from_doc.html', {'form': form})
 
 
+
 @login_required
 def preview_extracted_tasks(request):
-    headers = request.session.get('extracted_tasks', [])
+    tasks = request.session.get('extracted_tasks', [])
     project_id = request.session.get('related_project_id')
+    project = Project.objects.get(id=project_id) if project_id else None
 
-    # ✅ Get all users in the "Technician" group
-    try:
-        tech_group = Group.objects.get(name="technician")
-        techs = tech_group.user_set.all()
-    except Group.DoesNotExist:
-        techs = []
+    # Clean up duplicate tasks or tasks with just dots
+    seen_titles = set()
+    cleaned_tasks = []
+    for task in tasks:
+        title = task.get('title', '').strip().rstrip('.').strip()
+        description = task.get('description', '').strip()
 
-    # ✅ Get only active components (adjust field name if needed)
-    components = Component.objects.filter(status="ongoing")  # or .filter(is_active=True)
+        # Skip if only dots or already seen
+        if not title or title in seen_titles or title.endswith('...'):
+            continue
+
+        seen_titles.add(title)
+        task['title'] = title
+        task['description'] = description
+        cleaned_tasks.append(task)
+
+    request.session['extracted_tasks'] = cleaned_tasks  # update session with cleaned tasks
+
+    users = User.objects.filter(groups__name="technician")
+    components = Component.objects.filter(status='ongoing')
 
     return render(request, 'tracker/preview_tasks.html', {
-        'tasks': headers,
-        'users': techs,
+        'tasks': cleaned_tasks,
+        'related_project_id': project.id if project else '',
+        'users': users,
         'components': components,
-        'related_project_id': project_id,
     })
 
 
@@ -917,4 +943,42 @@ def edit_preview_task(request, index):
 
     task = tasks[index]
     return render(request, 'tracker/edit_preview_task.html', {'task': task, 'index': index})
+
+# views.py
+
+
+@csrf_exempt
+def assign_single_task(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+
+        title = data.get('title')
+        description = data.get('description')
+        due_date = data.get('due_date')
+        section = data.get('section')
+        user_id = data.get('user')
+        component_id = data.get('component')
+        project_id = data.get('project')
+
+        try:
+            user = User.objects.get(id=user_id)
+            project = Project.objects.get(id=project_id)
+            component = Component.objects.get(id=component_id) if component_id else None
+
+            task = Task.objects.create(
+                title=title,
+                description=description or "",
+                due_date=due_date,
+                assigned_to=user,
+                component=component,
+                project=project,
+                section=section,
+            )
+
+            return JsonResponse({'success': True, 'task_id': task.id})
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
 

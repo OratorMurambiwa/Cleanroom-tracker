@@ -8,48 +8,32 @@
   <div class="max-w-4xl mx-auto bg-white p-6 rounded shadow border border-red-100">
     <h2 class="text-2xl font-bold text-[#a51c30] mb-6">Preview Tasks Before Creating</h2>
 
-    <form method="post" id="task-form">
-      {% csrf_token %}
-      <ul class="space-y-4 mb-8">
-        {% for task in tasks %}
-        <li class="border border-gray-200 p-4 rounded bg-gray-50 relative">
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <h3 class="font-semibold text-lg">{{ task.title }}</h3>
-              <p class="text-sm text-gray-600">{{ task.description }}</p>
-              {% if task.section %}
-              <p class="text-xs text-gray-400 mt-1">Section {{ task.section }}</p>
-              {% endif %}
-            </div>
-            <div class="flex gap-2">
-              <a href="{% url 'edit_preview_task' index=forloop.counter0 %}" 
-                 class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-1 rounded">
-                Edit
-              </a>
-              <button type="button"
-                class="bg-green-600 hover:bg-green-700 text-white text-sm px-3 py-1 rounded"
-                onclick="openAssignModal({{ forloop.counter0 }})">Assign</button>
-            </div>
+    <ul class="space-y-4 mb-8">
+      {% for task in tasks %}
+      <li class="border border-gray-200 p-4 rounded bg-gray-50 relative">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h3 class="font-semibold text-lg">{{ task.title }}</h3>
+            <p class="text-sm text-gray-600">{{ task.description }}</p>
+            {% if task.section %}
+            <p class="text-xs text-gray-400 mt-1">Section {{ task.section }}</p>
+            {% endif %}
           </div>
-
-          <!-- Hidden assignment fields -->
-          <input type="hidden" name="tasks[{{ forloop.counter0 }}][title]" value="{{ task.title }}">
-          <input type="hidden" name="tasks[{{ forloop.counter0 }}][description]" value="{{ task.description }}">
-          <input type="hidden" name="tasks[{{ forloop.counter0 }}][section]" value="{{ task.section }}">
-          <input type="hidden" name="tasks[{{ forloop.counter0 }}][user]" id="user-{{ forloop.counter0 }}">
-          <input type="hidden" name="tasks[{{ forloop.counter0 }}][due_date]" id="due-{{ forloop.counter0 }}">
-          <input type="hidden" name="tasks[{{ forloop.counter0 }}][component]" id="component-{{ forloop.counter0 }}">
-          <input type="hidden" name="tasks[{{ forloop.counter0 }}][project]" value="{{ related_project_id }}">
-        </li>
-        {% endfor %}
-      </ul>
-
-      <div class="text-center">
-        <button type="submit" class="bg-[#a51c30] hover:bg-red-700 text-white font-semibold py-2 px-6 rounded">
-          Confirm & Create Tasks
-        </button>
-      </div>
-    </form>
+          <div class="flex gap-2">
+            <a href="{% url 'edit_preview_task' index=forloop.counter0 %}" 
+               class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-1 rounded">
+              Edit
+            </a>
+            <button type="button"
+              class="bg-green-600 hover:bg-green-700 text-white text-sm px-3 py-1 rounded"
+              onclick="openAssignModal({{ forloop.counter0 }}, '{{ task.title }}', '{{ task.description }}', '{{ task.section }}')">
+              Assign
+            </button>
+          </div>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
   </div>
 
   <!-- Assignment Modal -->
@@ -58,7 +42,6 @@
       <h3 class="text-xl font-bold mb-4 text-[#a51c30]">Assign Task</h3>
 
       <div class="space-y-4">
-        <!-- Technician Dropdown -->
         <div>
           <label class="block text-sm font-semibold mb-1">Assign To</label>
           <select id="modal-user" class="w-full border border-gray-300 p-2 rounded" autocomplete="off">
@@ -70,13 +53,11 @@
           </select>
         </div>
 
-        <!-- Due Date -->
         <div>
           <label class="block text-sm font-semibold mb-1">Due Date</label>
           <input type="date" id="modal-due" class="w-full border border-gray-300 p-2 rounded" autocomplete="off">
         </div>
 
-        <!-- Component Dropdown -->
         <div>
           <label class="block text-sm font-semibold mb-1">Component</label>
           <select id="modal-component" class="w-full border border-gray-300 p-2 rounded" autocomplete="off">
@@ -100,28 +81,61 @@
 
   <!-- JS for modal assignment -->
   <script>
-    let currentTaskIndex = null;
+    let currentTask = {
+      index: null,
+      title: '',
+      description: '',
+      section: ''
+    };
 
-    function openAssignModal(index) {
-      currentTaskIndex = index;
+    function openAssignModal(index, title, description, section) {
+      currentTask.index = index;
+      currentTask.title = title;
+      currentTask.description = description;
+      currentTask.section = section;
       document.getElementById('assignModal').classList.remove('hidden');
     }
 
     function closeAssignModal() {
       document.getElementById('assignModal').classList.add('hidden');
-      currentTaskIndex = null;
+      currentTask.index = null;
     }
 
     function saveAssignment() {
-      if (currentTaskIndex !== null) {
-        const userVal = document.getElementById('modal-user').value;
-        const dueVal = document.getElementById('modal-due').value;
-        const compVal = document.getElementById('modal-component').value;
+      const user = document.getElementById('modal-user').value;
+      const due = document.getElementById('modal-due').value;
+      const component = document.getElementById('modal-component').value;
+      const project = "{{ related_project_id }}";
 
-        document.getElementById(`user-${currentTaskIndex}`).value = userVal;
-        document.getElementById(`due-${currentTaskIndex}`).value = dueVal;
-        document.getElementById(`component-${currentTaskIndex}`).value = compVal;
-      }
+      fetch("{% url 'assign_single_task' %}", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+          title: currentTask.title,
+          description: currentTask.description,
+          section: currentTask.section,
+          user: user,
+          due_date: due,
+          component: component,
+          project: project
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert('✅ Task created successfully!');
+        } else {
+          alert('⚠️ Error: ' + data.error);
+        }
+      })
+      .catch(error => {
+        alert('❌ Something went wrong.');
+        console.error(error);
+      });
+
       closeAssignModal();
     }
   </script>
