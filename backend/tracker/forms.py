@@ -139,7 +139,7 @@ class TravelerDocUploadForm(forms.Form):
 class MessageForm(forms.ModelForm):
     class Meta:
         model = Message
-        fields = ['body']
+        fields = ['body', 'file']
         widgets = {
-            'body': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Type your message...'}),
+            'body': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Type your message...', 'class': 'w-full border rounded p-2'}),
         }

@@ -9,7 +9,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
 import pandas as pd
-import fitz  # PyMuPDF
+import fitz 
 import re
 import os
 import uuid
@@ -1043,13 +1043,14 @@ def project_messages_view(request, project_id):
 
     messages = thread.messages.order_by('timestamp')
     if request.method == 'POST':
-        form = MessageForm(request.POST)
+        form = MessageForm(request.POST, request.FILES)
         if form.is_valid():
             message = form.save(commit=False)
             message.thread = thread
             message.sender = request.user
             message.save()
-            return redirect('project_messages', project_id=project.id)  # 👈 use URL name here
+            return redirect('project_messages', project_id=project.id)
+
     else:
         form = MessageForm()
 
