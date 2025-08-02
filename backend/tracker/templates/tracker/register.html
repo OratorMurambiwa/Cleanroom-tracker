@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Create Account – LeinariX</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --accent-red: #a51c30;
+      --bg-cream: #fdf8ee;
+      --panel-cream: #fbf6eb;
+      --text-dark: #1A1A1A;
+    }
+  </style>
+</head>
+
+<body class="bg-[var(--bg-cream)] text-[var(--text-dark)] min-h-screen flex items-center justify-center px-4">
+
+  <div class="w-full max-w-md bg-[var(--panel-cream)] rounded-lg shadow-lg p-8 border border-gray-200">
+    <h2 class="text-2xl font-bold mb-6 text-center text-[var(--accent-red)]">Create Your Account</h2>
+
+    <form method="POST" action="{% url 'register' %}" class="space-y-4">
+      {% csrf_token %}
+
+      {% for field in form %}
+        <div>
+          <label for="{{ field.id_for_label }}" class="block mb-1 font-semibold">
+            {{ field.label }}
+          </label>
+          {{ field }}
+          {% if field.errors %}
+            <p class="text-red-600 text-sm mt-1">{{ field.errors|striptags }}</p>
+          {% endif %}
+        </div>
+      {% endfor %}
+
+      <button type="submit" class="w-full bg-[var(--accent-red)] text-white font-semibold py-2 rounded hover:bg-red-700 transition">
+        Sign Up
+      </button>
+    </form>
+
+    <p class="mt-4 text-sm text-center text-gray-700">
+      Already have an account?
+      <a href="{% url 'custom_login' %}" class="text-[var(--accent-red)] hover:underline">Sign in here</a>.
+    </p>
+  </div>
+
+</body>
+</html>

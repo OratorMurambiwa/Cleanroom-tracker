@@ -30,7 +30,7 @@ class Project(models.Model):
 # ----------------------- Component -----------------------
 class Component(models.Model):
     name = models.CharField(max_length=100)
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='components', null=True, blank=True)
+    projects = models.ManyToManyField(Project, related_name='components')  # changed from FK to M2M
     description = models.TextField(blank=True)
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
@@ -51,8 +51,10 @@ class Task(models.Model):
     section = models.CharField(max_length=20, blank=True, null=True)
     title = models.CharField(max_length=100)
     description = models.TextField(blank=True)
+
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='tasks', null=True, blank=True)
-    component = models.ForeignKey(Component, on_delete=models.SET_NULL, null=True, blank=True)
+    components = models.ManyToManyField(Component, related_name='tasks', blank=True)  # now supports multiple components
+
     assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
 
     completed = models.BooleanField(default=False)
@@ -75,24 +77,21 @@ class Task(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        link = 'No Project or Component'
-        if self.project:
-            link = self.project.name
-        elif self.component:
-            link = self.component.name
-        return f'{self.title} -> ({link})'
+        return f'{self.title} → {self.project.name if self.project else "No Project"}'
 
 
 # ----------------------- Reminder -----------------------
+
 class Reminder(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     note = models.TextField(blank=True)
-    due_date = models.DateField()
+    reminder_time = models.DateTimeField()  # renamed and updated from DateField
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.title} - {self.due_date}"
+        return f"{self.title} - {self.reminder_time}"
+
 
 
 # ----------------------- Document -----------------------
@@ -104,6 +103,7 @@ class Document(models.Model):
 
     def __str__(self):
         return f"Document for {self.project.name} uploaded on {self.uploaded_at}"
+
 
 class TravelerDocument(models.Model):
     file = models.FileField(upload_to='traveler_docs/')
@@ -118,7 +118,6 @@ class InventoryUpload(models.Model):
     file = models.FileField(upload_to='uploads/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
-from django.contrib.auth.models import User
 
 class LookupHistory(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -128,23 +127,22 @@ class LookupHistory(models.Model):
     def __str__(self):
         return f"{self.user.username} searched: {self.query}"
 
-#----------------------------Messaging----------------------------------------
 
-
+# ----------------------- Messaging -----------------------
 class MessageThread(models.Model):
-    project = models.ForeignKey('Project', on_delete=models.CASCADE, related_name='threads')
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='threads')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"Thread for Project: {self.project.name}"
 
+
 class Message(models.Model):
     thread = models.ForeignKey(MessageThread, on_delete=models.CASCADE, related_name='messages')
     sender = models.ForeignKey(User, on_delete=models.CASCADE)
     body = models.TextField(blank=True)
-    file = models.FileField(upload_to='chat_uploads/', blank=True, null=True)  # NEW
+    file = models.FileField(upload_to='chat_uploads/', blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"From {self.sender.username} at {self.timestamp}"
-

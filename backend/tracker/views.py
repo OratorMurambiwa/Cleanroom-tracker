@@ -8,17 +8,21 @@ from datetime import datetime
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
+from django.contrib.auth import logout
 import pandas as pd
 import fitz 
 import re
 import os
 import uuid
+from django.contrib.auth.forms import UserCreationForm
 from django.conf import settings
 from django.utils import timezone
+from datetime import datetime, timedelta
+from django.utils.timezone import now
 from .models import Task, Project, Component, Reminder, InventoryUpload, LookupHistory, Message, MessageThread
 os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
 from .forms import (
-ProjectForm, ComponentForm, ReminderForm, MessageForm,
+ProjectForm, ComponentForm, ReminderForm, MessageForm, CustomUserCreationForm,
 DocumentForm, TeamMemberForm, TaskForm, TechnicianTaskSubmissionForm, TravelerDocUploadForm
 )
 
@@ -59,30 +63,52 @@ def custom_login_view(request):
         username = request.POST.get('username')
         password = request.POST.get('password')
         role = request.POST.get('role')
-        user = authenticate(request, username=username, password=password)
-        if user:
-            login(request, user)
-            if role == 'projectlead':
-                user.groups.set([Group.objects.get(name='lead')])
-                return redirect('lead_dashboard')
-            elif role == 'technician':
-                user.groups.set([Group.objects.get(name='technician')])
-                return redirect('tech_dashboard')
-        return render(request, 'tracker/index.html', {'error': 'Invalid credentials'})
-    return render(request, 'tracker/index.html')
+        next_url = request.GET.get('next')  # for redirect after login if applicable
 
+        print("USERNAME:", username)
+        print("PASSWORD:", password)
+        print("ROLE:", role)
+
+        user = authenticate(request, username=username, password=password)
+        print("AUTHENTICATED USER:", user)
+
+        if user is not None:
+            login(request, user)
+
+            # Optional: Assign role-based group ONLY if user isn't in the group already
+            if role == 'projectlead':
+                lead_group = Group.objects.get(name='lead')
+                if not user.groups.filter(name='lead').exists():
+                    user.groups.add(lead_group)
+                return redirect(next_url or 'lead_dashboard')
+
+            elif role == 'technician':
+                tech_group = Group.objects.get(name='technician')
+                if not user.groups.filter(name='technician').exists():
+                    user.groups.add(tech_group)
+                return redirect(next_url or 'tech_dashboard')
+
+            else:
+                print("Unknown role provided.")
+                return render(request, 'tracker/index.html', {'error': 'Unknown role selected'})
+
+        else:
+            print("Login failed: Invalid credentials")
+            return render(request, 'tracker/index.html', {'error': 'Invalid credentials'})
+
+    return render(request, 'tracker/index.html')
 # ----------------------- Dashboards -----------------------
 
 @login_required
 def lead_dashboard(request):
     projects = Project.objects.all()
-    pending_tasks = Task.objects.filter(completed=True, is_approved=False)
     components = Component.objects.all()
-    
+    pending_tasks = Task.objects.filter(completed=True, is_approved=False)
+
     return render(request, 'tracker/leaddashboard.html', {
         'projects': projects,
-        'pending_tasks': pending_tasks,
         'components': components,
+        'pending_tasks': pending_tasks,
     })
 
 @login_required
@@ -251,11 +277,13 @@ def edit_component(request, component_id):
 @login_required
 def components_view(request):
     components = Component.objects.all()
-    return render(request, 'components.html', {'components': components})
-    
+    return render(request, 'tracker/components.html', {'components': components})
+
+@login_required
 def component_list_view(request):
     components = Component.objects.select_related('project').order_by('-updated_at')
-    return render(request, 'components.html', {'components': components})
+    return render(request, 'tracker/component_list.html', {'components': components})
+
     
 # ----------------------- Task Views -----------------------
 @login_required
@@ -581,13 +609,14 @@ def add_team_member(request, project_id):
 
 @login_required
 def calendar_view(request):
-    tasks = Task.objects.all()
+    tasks = Task.objects.filter(due_date__isnull=False)
     reminders = Reminder.objects.filter(user=request.user)
     today = timezone.now().date()
-    return render(request, 'calendar.html', {
+
+    return render(request, 'tracker/calendar.html', {
         'tasks': tasks,
         'reminders': reminders,
-        'today': today
+        'today': today,
     })
 
 @login_required
@@ -602,10 +631,25 @@ def create_reminder(request):
     return redirect('calendar')
 
 @login_required
+def delete_reminder(request, reminder_id):
+    reminder = get_object_or_404(Reminder, id=reminder_id, user=request.user)
+    reminder.delete()
+    return redirect('calendar')
+
+@login_required
 def technician_dashboard(request):
     reminders = Reminder.objects.filter(user=request.user).order_by('due_date')
     form = ReminderForm()
-    
+
+    # Add upcoming tasks (due in the next 3 days)
+    upcoming_tasks = Task.objects.filter(
+        assigned_to=request.user,
+        due_date__isnull=False,
+        due_date__gte=now(),
+        due_date__lte=now() + timedelta(days=3),
+        completed=False
+    ).order_by('due_date')
+
     if request.method == 'POST':
         form = ReminderForm(request.POST)
         if form.is_valid():
@@ -613,9 +657,10 @@ def technician_dashboard(request):
             reminder.user = request.user
             reminder.save()
             return redirect('technician_dashboard')
-    
+
     return render(request, 'dashboard/technician_dashboard.html', {
         'reminders': reminders,
+        'upcoming_tasks': upcoming_tasks,
         'form': form,
     })
 
@@ -1060,4 +1105,67 @@ def project_messages_view(request, project_id):
         'form': form,
     })
 
+def landing_page(request):
+    return render(request, 'tracker/landing_page.html')
 
+
+
+def register_view(request):
+    if request.method == 'POST':
+        form = CustomUserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            group = form.cleaned_data.get('group')
+            group.user_set.add(user)  # Assign user to selected group
+            messages.success(request, 'Account created successfully! Please log in.')
+            return redirect('custom_login')  # redirect to your login page
+    else:
+        form = CustomUserCreationForm()
+    
+    return render(request, 'tracker/register.html', {'form': form})
+
+
+@login_required
+def tech_project_list_view(request):
+    projects = Project.objects.all()
+    return render(request, 'tracker/tech_project_list.html', {'projects': projects})
+
+def LogoutView(request):
+    logout(request)
+    return redirect('landing')
+
+@login_required
+def settings_view(request):
+    return render(request, 'tracker/settings.html')
+
+
+def all_tasks_view(request):
+    tasks = Task.objects.all()
+    query = request.GET.get('q', '')
+    start_date = request.GET.get('start')
+    end_date = request.GET.get('end')
+
+    if query:
+        tasks = tasks.filter(
+            Q(title__icontains=query) |
+            Q(assigned_to__first_name__icontains=query) |
+            Q(assigned_to__last_name__icontains=query)
+        )
+
+    if start_date:
+        tasks = tasks.filter(due_date__gte=start_date)
+
+    if end_date:
+        tasks = tasks.filter(due_date__lte=end_date)
+
+    return render(request, 'tracker/alltasks.html', {
+        'tasks': tasks,
+    })
+
+
+@login_required
+def view_pending_tasks(request):
+    pending_tasks = Task.objects.filter(completed=True, is_approved=False)
+    return render(request, 'tracker/view_pending_tasks.html', {
+        'pending_tasks': pending_tasks
+    })

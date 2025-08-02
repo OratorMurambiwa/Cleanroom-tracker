@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>All Projects | Cleanroom Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fade-in 0.4s ease-out;
+    }
+  </style>
+</head>
+<body class="bg-[#F9FAFB] text-[#111827] min-h-screen flex">
+
+  <!-- Sidebar -->
+  <aside class="w-64 bg-[#0F172A] text-white h-screen p-6 flex flex-col justify-between">
+    <div>
+      <h1 class="text-2xl font-bold mb-8 text-[#F6C90E]">Cleanroom</h1>
+      <nav class="space-y-4">
+        <a href="#" class="flex items-center gap-3 text-[#F6C90E] font-semibold">
+          <span>🏠</span> <span>Dashboard</span>
+        </a>
+        <a href="#" class="flex items-center gap-3 text-gray-400 hover:text-white">
+          <span>📁</span> <span>Projects</span>
+        </a>
+        <a href="#" class="flex items-center gap-3 text-gray-400 hover:text-white">
+          <span>🧪</span> <span>Tasks</span>
+        </a>
+        <a href="#" class="flex items-center gap-3 text-gray-400 hover:text-white">
+          <span>🔧</span> <span>Components</span>
+        </a>
+        <a href="#" class="flex items-center gap-3 text-gray-400 hover:text-white">
+          <span>📨</span> <span>Messages</span>
+        </a>
+      </nav>
+    </div>
+    <div class="space-y-2">
+      <a href="#" class="text-sm text-gray-400 hover:text-white block">Settings</a>
+      <a href="#" class="text-sm text-red-400 hover:text-red-300 block">Log out</a>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 p-8 animate-fade-in">
+    <div class="mb-8">
+      <h2 class="text-3xl font-bold text-[#0F172A]">All Projects</h2>
+      <p class="text-sm text-gray-500">Browse all active and completed cleanroom projects.</p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for project in projects %}
+      <div class="bg-white rounded-xl shadow p-5 border border-gray-100 hover:shadow-md transition">
+        <h3 class="text-lg font-semibold text-[#0F172A] mb-2">{{ project.name }}</h3>
+        <p class="text-sm text-gray-600 mb-1"><strong>Status:</strong> {{ project.status }}</p>
+        <p class="text-sm text-gray-600 mb-1"><strong>Start:</strong> {{ project.start_date }}</p>
+        <p class="text-sm text-gray-600 mb-3"><strong>End:</strong> {{ project.end_date }}</p>
+
+        <div class="w-full bg-gray-200 h-2 rounded-full mb-4">
+          <div class="bg-[#F6C90E] h-2 rounded-full" style="width: {{ project.progress|floatformat:0 }}%;"></div>
+        </div>
+
+        <a href="{% url 'tech_project_detail' project.id %}" class="inline-block text-sm text-white bg-[#F6C90E] px-4 py-1.5 rounded hover:bg-yellow-400 font-medium transition">
+          View Details
+        </a>
+      </div>
+      {% empty %}
+      <p class="text-gray-500 col-span-full text-center text-lg italic">No projects available.</p>
+      {% endfor %}
+    </div>
+  </main>
+
+</body>
+</html>

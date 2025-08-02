@@ -114,7 +114,9 @@ USE_I18N = True
 # --------------------------
 # Static & Media
 # --------------------------
-STATIC_URL = 'static/'TIME_ZONE = 'America/Los_Angeles'
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [BASE_DIR / "tracker" / "static"]
+TIME_ZONE = 'America/Los_Angeles'
 USE_TZ = True
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'backend/media')

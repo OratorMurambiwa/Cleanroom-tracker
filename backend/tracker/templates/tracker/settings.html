@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Settings | Cleanroom Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --accent-red: #a51c30;
+    }
+    .dark-mode {
+      background-color: #1a1a1a;
+      color: white;
+    }
+    .dark-mode .card {
+      background-color: #2d2d2d;
+      color: white;
+    }
+  </style>
+</head>
+<body id="settings-body" class="min-h-screen bg-[#fdf8f6] text-gray-800 font-inter transition-colors duration-300">
+
+  <div class="p-10 max-w-2xl mx-auto">
+    <h1 class="text-2xl text-[var(--accent-red)] font-bold mb-6">⚙️ Settings</h1>
+
+    <div class="card bg-white border border-[#e7c2c4] rounded p-6 shadow">
+      <div class="flex items-center justify-between">
+        <span class="font-medium text-lg">🌗 Dark Mode</span>
+        <label class="inline-flex items-center cursor-pointer">
+          <input type="checkbox" id="darkToggle" class="sr-only">
+          <div class="w-10 h-6 bg-gray-300 rounded-full p-1 flex items-center">
+            <div class="dot w-4 h-4 bg-white rounded-full shadow-md transition"></div>
+          </div>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const toggle = document.getElementById('darkToggle');
+    const body = document.getElementById('settings-body');
+
+    toggle.addEventListener('change', () => {
+      body.classList.toggle('dark-mode');
+    });
+  </script>
+
+</body>
+</html>

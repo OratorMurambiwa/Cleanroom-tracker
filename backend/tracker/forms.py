@@ -1,7 +1,8 @@
 from django import forms
 from .models import Project, Component, Task, Reminder, Document, TravelerDocument
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from .models import Message
+from django.contrib.auth.forms import UserCreationForm
 
 # --- Project Form ---
 class ProjectForm(forms.ModelForm):
@@ -19,10 +20,11 @@ class ProjectForm(forms.ModelForm):
             }),
         }
 
+# --- Component Form ---
 class ComponentForm(forms.ModelForm):
     class Meta:
         model = Component
-        fields = ['name', 'description', 'progress']  
+        fields = ['name', 'description', 'progress']
         widgets = {
             'name': forms.TextInput(attrs={
                 'placeholder': 'Component Title',
@@ -38,12 +40,19 @@ class ComponentForm(forms.ModelForm):
             }),
         }
 
-
 # --- Task Form ---
 class TaskForm(forms.ModelForm):
+    components = forms.ModelMultipleChoiceField(
+        queryset=Component.objects.all(),
+        required=False,
+        widget=forms.SelectMultiple(attrs={
+            'class': 'w-full border border-[#e7c2c4] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-[#a51c30]'
+        })
+    )
+
     class Meta:
         model = Task
-        fields = ['title', 'description', 'status', 'project', 'component', 'assigned_to', 'due_date']
+        fields = ['title', 'description', 'status', 'project', 'components', 'assigned_to', 'due_date']
         widgets = {
             'title': forms.TextInput(attrs={
                 'placeholder': 'Task Title',
@@ -63,7 +72,7 @@ class TaskForm(forms.ModelForm):
 class ReminderForm(forms.ModelForm):
     class Meta:
         model = Reminder
-        fields = ['title', 'note', 'due_date']
+        fields = ['title', 'note', 'reminder_time']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-input'}),
             'note': forms.Textarea(attrs={'class': 'form-textarea'}),
@@ -89,6 +98,7 @@ class DocumentForm(forms.ModelForm):
 class TeamMemberForm(forms.Form):
     user = forms.ModelChoiceField(queryset=User.objects.all(), label="Select User")
 
+# --- Technician Task Submission Form ---
 class TechnicianTaskSubmissionForm(forms.ModelForm):
     class Meta:
         model = Task
@@ -109,9 +119,7 @@ class TechnicianTaskSubmissionForm(forms.ModelForm):
             }),
         }
 
-
-
-
+# --- Traveler Document Upload Form ---
 class TravelerDocUploadForm(forms.Form):
     file = forms.FileField(label="Traveler Document")
     start_section = forms.IntegerField(label="Start Section")
@@ -134,12 +142,29 @@ class TravelerDocUploadForm(forms.Form):
         help_text="End extracting at this page (1-based index)"
     )
 
-
-
+# --- Message Form ---
 class MessageForm(forms.ModelForm):
     class Meta:
         model = Message
         fields = ['body', 'file']
         widgets = {
-            'body': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Type your message...', 'class': 'w-full border rounded p-2'}),
+            'body': forms.Textarea(attrs={
+                'rows': 2,
+                'placeholder': 'Type your message...',
+                'class': 'w-full border rounded p-2'
+            }),
         }
+
+# --- Custom User Creation Form ---
+class CustomUserCreationForm(UserCreationForm):
+    email = forms.EmailField(required=True)
+    group = forms.ModelChoiceField(
+        queryset=Group.objects.exclude(name__iexact='Lead'),
+        required=True,
+        empty_label="Select a role",
+        label="Register As"
+    )
+
+    class Meta:
+        model = User
+        fields = ("username", "email", "password1", "password2", "group")
