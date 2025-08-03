@@ -58,9 +58,11 @@
         <a href="{% url 'components' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)] transition-all">
           <i data-lucide="package" class="w-5 h-5"></i> <span>Components</span>
         </a>
-        <a href="messages.html" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)] transition-all">
+        {% if projects %}
+        <a href="{% url 'project_messages' project_id=projects.0.id %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)] transition-all">
           <i data-lucide="messages-square" class="w-5 h-5"></i> <span>Messages</span>
         </a>
+        {% endif %}
         <a href="alerts.html" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)] transition-all">
           <i data-lucide="bell" class="w-5 h-5"></i> <span>Alerts</span>
         </a>

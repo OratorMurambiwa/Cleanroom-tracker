@@ -121,26 +121,52 @@ class TechnicianTaskSubmissionForm(forms.ModelForm):
 
 # --- Traveler Document Upload Form ---
 class TravelerDocUploadForm(forms.Form):
-    file = forms.FileField(label="Traveler Document")
-    start_section = forms.IntegerField(label="Start Section")
-    end_section = forms.IntegerField(label="End Section")
+    file = forms.FileField(
+        label="Traveler Document",
+        required=False,
+        widget=forms.ClearableFileInput(attrs={
+            'class': 'w-full border border-[#e7c2c4] rounded-md px-3 py-2 text-sm bg-white text-gray-800 focus:outline-none focus:ring-[#a51c30]'
+        })
+    )
+    start_section = forms.IntegerField(
+        label="Start Section",
+        widget=forms.NumberInput(attrs={
+            'class': 'w-full border border-[#e7c2c4] rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-[#a51c30]'
+        })
+    )
+    end_section = forms.IntegerField(
+        label="End Section",
+        widget=forms.NumberInput(attrs={
+            'class': 'w-full border border-[#e7c2c4] rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-[#a51c30]'
+        })
+    )
     related_project = forms.ModelChoiceField(
         queryset=Project.objects.all(),
         required=False,
-        label="Related Project"
+        label="Related Project",
+        widget=forms.Select(attrs={
+            'class': 'w-full border border-[#e7c2c4] rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-[#a51c30]'
+        })
     )
     start_page = forms.IntegerField(
         required=False,
         min_value=1,
         label="Start Page (Optional)",
-        help_text="Start extracting from this page (1-based index)"
+        help_text="Start extracting from this page (1-based index)",
+        widget=forms.NumberInput(attrs={
+            'class': 'w-full border border-[#e7c2c4] rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-[#a51c30]'
+        })
     )
     end_page = forms.IntegerField(
         required=False,
         min_value=1,
         label="End Page (Optional)",
-        help_text="End extracting at this page (1-based index)"
+        help_text="End extracting at this page (1-based index)",
+        widget=forms.NumberInput(attrs={
+            'class': 'w-full border border-[#e7c2c4] rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-[#a51c30]'
+        })
     )
+
 
 # --- Message Form ---
 class MessageForm(forms.ModelForm):

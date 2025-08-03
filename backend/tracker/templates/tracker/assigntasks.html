@@ -71,16 +71,16 @@
         <!-- Assign Task -->
         <form method="POST" class="flex flex-col space-y-4 flex-grow">
           {% csrf_token %}
-          <input type="text" name="title" placeholder="Task Title" class="border px-3 py-2 rounded-md">
-          <textarea name="description" rows="6" placeholder="Task Description" class="border px-3 py-2 rounded-md"></textarea>
+          <input type="text" name="title" placeholder="Task Title" class="border px-2 py-1.5 rounded-md text-sm">
+          <textarea name="description" rows="4" placeholder="Task Description" class="border px-2 py-1.5 rounded-md text-sm"></textarea>
           <div class="flex gap-4">
-            <select name="project" class="w-1/2 border px-3 py-2 rounded-md">
+            <select name="project" class="w-1/2 border px-2 py-1.5 rounded-md text-sm">
               <option value="">Select Project</option>
               {% for project in projects %}
                 <option value="{{ project.id }}">{{ project.name }}</option>
               {% endfor %}
             </select>
-            <select name="technician" class="w-1/2 border px-3 py-2 rounded-md">
+            <select name="technician" class="w-1/2 border px-2 py-1.5 rounded-md text-sm">
               <option value="">Select Technician</option>
               {% for tech in technicians %}
                 <option value="{{ tech.id }}">{{ tech.username }}</option>
@@ -89,7 +89,7 @@
           </div>
           <div>
             <label for="components" class="block mb-1 text-sm font-medium">Select Components</label>
-            <select name="components" multiple class="w-full border px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-[#a51c30]">
+            <select name="components" multiple class="w-full border px-2 py-1.5 rounded-md text-sm focus:outline-none focus:ring-[#a51c30]">
               {% for comp in components %}
                 <option value="{{ comp.id }}">{{ comp.name }}</option>
               {% endfor %}
@@ -97,20 +97,20 @@
             <p class="text-xs text-gray-500 mt-1">Hold Ctrl (Windows) or Cmd (Mac) to select multiple.</p>
           </div>
           <div class="pt-4 space-y-2">
-            <input type="date" name="due_date" class="w-full border px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-[#a51c30]">
-            <button type="submit" class="w-full bg-[var(--accent-red)] text-white px-6 py-2 rounded-md hover:bg-red-700 transition">Assign Task</button>
-            <a href="{% url 'upload_tasks_from_traveler' %}" class="block w-full text-center bg-[#5b4d40] text-white px-6 py-2 rounded-md hover:bg-[#3e2f27] transition">📄 Upload from Document</a>
+            <input type="date" name="due_date" class="w-full border px-2 py-1.5 rounded-md text-sm focus:outline-none focus:ring-[#a51c30]">
+            <button type="submit" class="w-full bg-[var(--accent-red)] text-white px-4 py-2 rounded-md hover:bg-red-700 transition text-sm">Assign Task</button>
+            <a href="{% url 'upload_tasks_from_traveler' %}" class="block w-full text-center bg-[#5b4d40] text-white px-4 py-2 rounded-md hover:bg-[#3e2f27] transition text-sm">📄 Upload from Document</a>
           </div>
         </form>
 
         <!-- Approve Completed Tasks -->
-        <div class="bg-white rounded-xl shadow border border-[#e7c2c4] p-6 max-h-[620px] overflow-y-auto">
+        <div class="bg-white rounded-xl shadow border border-[#e7c2c4] p-4 max-h-[620px] overflow-y-auto">
           <h2 class="text-md font-bold text-[var(--accent-red)] mb-4">Approve Completed Tasks</h2>
           <ul class="space-y-2">
             {% for task in pending_tasks %}
               <li class="flex justify-between items-center bg-[#fdfdfd] border border-[#e7c2c4] rounded-md p-3">
-                <div>
-                  <p class="text-sm font-semibold">{{ task.title }}</p>
+                <div class="text-sm">
+                  <p class="font-semibold">{{ task.title }}</p>
                   <p class="text-xs text-gray-500">Assigned to: {{ task.assigned_to.username }}</p>
                   <p class="text-xs text-gray-500">Project: {{ task.project.name }}</p>
                   {% if task.components.all %}
@@ -121,7 +121,7 @@
                 </div>
                 <form method="POST" action="{% url 'approve_task' task.id %}">
                   {% csrf_token %}
-                  <button class="bg-green-600 text-white px-4 py-1 text-sm rounded-md hover:bg-green-700">Approve</button>
+                  <button class="bg-green-600 text-white px-4 py-1 text-xs rounded-md hover:bg-green-700">Approve</button>
                 </form>
               </li>
             {% empty %}
@@ -132,6 +132,7 @@
       </div>
     </section>
   </main>
+
   <script>
     lucide.createIcons();
     const profileBtn = document.getElementById('profileBtn');

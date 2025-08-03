@@ -146,3 +146,13 @@ class Message(models.Model):
 
     def __str__(self):
         return f"From {self.sender.username} at {self.timestamp}"
+
+
+#-------------Stored Traveler Doc----------------------------------------------
+
+class StoredTravelerFile(models.Model):
+    file = models.FileField(upload_to='temp_uploads/')
+    filename = models.CharField(max_length=255)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    project = models.ForeignKey('Project', null=True, blank=True, on_delete=models.SET_NULL)
+

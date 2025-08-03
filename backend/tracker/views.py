@@ -19,7 +19,7 @@ from django.conf import settings
 from django.utils import timezone
 from datetime import datetime, timedelta
 from django.utils.timezone import now
-from .models import Task, Project, Component, Reminder, InventoryUpload, LookupHistory, Message, MessageThread
+from .models import Task, Project, Component, Reminder, InventoryUpload, LookupHistory, Message, MessageThread, StoredTravelerFile
 os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
 from .forms import (
 ProjectForm, ComponentForm, ReminderForm, MessageForm, CustomUserCreationForm,
@@ -877,6 +877,7 @@ def tech_components_view(request):
     })
 
 # ----------------------- Upload Traveler View -----------------------
+
 @login_required
 def upload_tasks_from_traveler_view(request):
     if request.method == 'POST':
@@ -885,23 +886,51 @@ def upload_tasks_from_traveler_view(request):
         if form.is_valid():
             start_from = form.cleaned_data['start_section']
             end_at = form.cleaned_data['end_section']
-            uploaded_file = request.FILES['file']
+            uploaded_file = request.FILES.get('file')
             project = form.cleaned_data['related_project']
             start_page = form.cleaned_data.get('start_page')
             end_page = form.cleaned_data.get('end_page')
 
-            temp_filename = f"/tmp/{uuid.uuid4()}_{uploaded_file.name}"
-            with open(temp_filename, 'wb+') as dest:
-                for chunk in uploaded_file.chunks():
-                    dest.write(chunk)
+            # Save inputs in session
+            request.session['start_section'] = start_from
+            request.session['end_section'] = end_at
+            request.session['start_page'] = start_page
+            request.session['end_page'] = end_page
+            request.session['related_project_id'] = project.id if project else None
 
+            stored_file_obj = None
+
+            if uploaded_file:
+                stored_file_obj = StoredTravelerFile.objects.create(
+                    file=uploaded_file,
+                    filename=uploaded_file.name,
+                    project=project
+                )
+                request.session['stored_file_id'] = stored_file_obj.id
+                request.session['document_name'] = uploaded_file.name
+            else:
+                file_id = request.session.get('stored_file_id')
+                if file_id:
+                    try:
+                        stored_file_obj = StoredTravelerFile.objects.get(id=file_id)
+                    except StoredTravelerFile.DoesNotExist:
+                        return render(request, 'tracker/upload_from_doc.html', {
+                            'form': form,
+                            'error': 'Previous file not found. Please upload again.'
+                        })
+                else:
+                    return render(request, 'tracker/upload_from_doc.html', {
+                        'form': form,
+                        'error': 'No file uploaded.'
+                    })
+
+            temp_filename = stored_file_obj.file.path
             headers = []
-            ext = os.path.splitext(uploaded_file.name)[1].lower()
+            ext = os.path.splitext(temp_filename)[1].lower()
 
             if ext == '.pdf':
                 doc = fitz.open(temp_filename)
 
-                # Convert to 0-based indexing
                 if start_page is not None and end_page is not None:
                     start_page = max(0, start_page - 1)
                     end_page = max(0, end_page - 1)
@@ -916,7 +945,7 @@ def upload_tasks_from_traveler_view(request):
 
                 for page_index, page in enumerate(pages_to_read):
                     lines = page.get_text("text").splitlines()
-                    actual_page_number = page_range_offset + page_index + 1  # for display
+                    actual_page_number = page_range_offset + page_index + 1
 
                     for line in lines:
                         line = line.strip()
@@ -963,13 +992,10 @@ def upload_tasks_from_traveler_view(request):
 
                 doc.close()
             else:
-                os.remove(temp_filename)
                 return render(request, 'tracker/upload_from_doc.html', {
                     'form': form,
                     'error': 'Only PDF files are supported for now.'
                 })
-
-            os.remove(temp_filename)
 
             seen = set()
             cleaned_headers = []
@@ -980,15 +1006,31 @@ def upload_tasks_from_traveler_view(request):
                     cleaned_headers.append(task)
 
             request.session['extracted_tasks'] = cleaned_headers
-            request.session['related_project_id'] = project.id if project else None
-
             return redirect('preview_extracted_tasks')
 
     else:
-        form = TravelerDocUploadForm()
+        initial_data = {
+            'start_section': request.session.get('start_section'),
+            'end_section': request.session.get('end_section'),
+            'start_page': request.session.get('start_page'),
+            'end_page': request.session.get('end_page'),
+            'related_project': request.session.get('related_project_id'),
+        }
+        form = TravelerDocUploadForm(initial=initial_data)
 
-    return render(request, 'tracker/upload_from_doc.html', {'form': form})
+    stored_file = None
+    if request.session.get('stored_file_id'):
+        stored_file = StoredTravelerFile.objects.filter(id=request.session['stored_file_id']).first()
 
+    return render(request, 'tracker/upload_from_doc.html', {
+        'form': form,
+        'stored_file': stored_file,
+    })
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.contrib.auth.models import User
+from django.shortcuts import render, redirect
+from .models import Project, Component
 
 
 @login_required
@@ -1040,7 +1082,18 @@ def edit_preview_task(request, index):
         return redirect('preview_extracted_tasks')
 
     task = tasks[index]
-    return render(request, 'tracker/edit_preview_task.html', {'task': task, 'index': index})
+
+    users = User.objects.filter(groups__name="technician")
+    components = Component.objects.filter(status='ongoing')
+    projects = Project.objects.all()
+
+    return render(request, 'tracker/edit_preview_task.html', {
+        'task': task,
+        'index': index,
+        'users': users,
+        'components': components,
+        'projects': projects,
+    })
 
 
 @csrf_exempt
@@ -1081,12 +1134,13 @@ def assign_single_task(request):
 
 #-----------------------------Messages Views-----------------------------------------
 
+
 @login_required
 def project_messages_view(request, project_id):
     project = get_object_or_404(Project, id=project_id)
     thread, created = MessageThread.objects.get_or_create(project=project)
-
     messages = thread.messages.order_by('timestamp')
+
     if request.method == 'POST':
         form = MessageForm(request.POST, request.FILES)
         if form.is_valid():
@@ -1095,7 +1149,6 @@ def project_messages_view(request, project_id):
             message.sender = request.user
             message.save()
             return redirect('project_messages', project_id=project.id)
-
     else:
         form = MessageForm()
 
@@ -1103,6 +1156,7 @@ def project_messages_view(request, project_id):
         'project': project,
         'messages': messages,
         'form': form,
+        'all_projects': Project.objects.all(),  # 👈 add this line for dropdown
     })
 
 def landing_page(request):

@@ -18,11 +18,25 @@
       📄 Upload Traveler Document
     </h2>
 
+    {% if error %}
+      <p class="text-sm text-red-600 mb-4 text-center">{{ error }}</p>
+    {% endif %}
+
+    {% if stored_file %}
+      <div class="mb-4 bg-[#fdf3f2] border border-[#e7c2c4] rounded p-3 text-sm text-gray-700">
+        <p>
+          <span class="font-semibold text-[#a51c30]">Using saved file:</span>
+          {{ stored_file.filename }}
+        </p>
+        <p class="text-xs text-gray-600">You can re-upload a new file to replace it.</p>
+      </div>
+    {% endif %}
+
     <form method="post" enctype="multipart/form-data" class="space-y-5">
       {% csrf_token %}
 
       <div>
-        <label for="id_file" class="block mb-2 text-sm font-semibold text-gray-700">Traveler Document (PDF or DOCX)</label>
+        <label for="id_file" class="block mb-2 text-sm font-semibold text-gray-700">Traveler Document (PDF only)</label>
         {{ form.file }}
       </div>
 
@@ -33,22 +47,22 @@
 
       <div class="flex flex-col sm:flex-row gap-4">
         <div class="w-full">
-          <label for="start_section" class="block mb-2 text-sm font-semibold text-gray-700">Start Section Number</label>
+          <label for="id_start_section" class="block mb-2 text-sm font-semibold text-gray-700">Start Section Number</label>
           {{ form.start_section }}
         </div>
         <div class="w-full">
-          <label for="end_section" class="block mb-2 text-sm font-semibold text-gray-700">End Section Number</label>
+          <label for="id_end_section" class="block mb-2 text-sm font-semibold text-gray-700">End Section Number</label>
           {{ form.end_section }}
         </div>
       </div>
 
       <div class="flex flex-col sm:flex-row gap-4">
         <div class="w-full">
-          <label for="start_page" class="block mb-2 text-sm font-semibold text-gray-700">Start Page (Optional)</label>
+          <label for="id_start_page" class="block mb-2 text-sm font-semibold text-gray-700">Start Page (Optional)</label>
           {{ form.start_page }}
         </div>
         <div class="w-full">
-          <label for="end_page" class="block mb-2 text-sm font-semibold text-gray-700">End Page (Optional)</label>
+          <label for="id_end_page" class="block mb-2 text-sm font-semibold text-gray-700">End Page (Optional)</label>
           {{ form.end_page }}
         </div>
       </div>

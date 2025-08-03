@@ -2,96 +2,168 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Project Messages</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --accent-red: #a51c30;
+      --bg-softest: #f8f6f3;
+      --panel-bg: #f6f3f0;
+      --text-dark: #1A1A1A;
+    }
+    .font-playfair { font-family: 'Playfair Display', serif; }
+    .font-inter { font-family: 'Inter', sans-serif; }
+  </style>
 </head>
-<body class="bg-gray-100 font-sans leading-normal tracking-normal">
 
-  <div class="max-w-3xl mx-auto mt-10 bg-white rounded-lg shadow p-6">
-    <h2 class="text-2xl font-bold mb-6 text-gray-800">
-      Messages for "{{ project.name }}"
-    </h2>
+<body class="font-inter text-sm bg-[var(--bg-softest)] text-[var(--text-dark)] min-h-screen flex flex-col">
 
-    <!-- Real-time message list -->
-    <div id="chat-box" class="space-y-4 max-h-96 overflow-y-auto border p-4 rounded bg-gray-50">
-      {% for msg in messages %}
-        <div class="border-b pb-2">
-          <div class="text-sm text-gray-600 font-medium">
-            {{ msg.sender.username }} — {{ msg.timestamp|date:"M d, Y H:i" }}
-          </div>
-          {% if msg.body %}
-            <p class="text-gray-800">{{ msg.body }}</p>
-          {% endif %}
-          {% if msg.file %}
-            {% with msg.file.name|lower as filename %}
-              {% if ".jpg" in filename or ".jpeg" in filename or ".png" in filename %}
-                <img src="{{ msg.file.url }}" alt="Uploaded Image" class="mt-2 max-w-xs rounded shadow" />
-              {% elif ".pdf" in filename %}
-                <a href="{{ msg.file.url }}" target="_blank" class="text-blue-600 underline text-sm mt-1 block">View PDF</a>
-              {% else %}
-                <a href="{{ msg.file.url }}" download class="text-blue-600 underline text-sm mt-1 block">Download Attachment</a>
-              {% endif %}
-            {% endwith %}
-          {% endif %}
+  <!-- Top Bar -->
+  <header class="bg-[var(--panel-bg)] shadow-md px-4 py-3 flex justify-between items-center h-[60px] border-b border-gray-300">
+    <h1 class="text-xl font-playfair text-[var(--accent-red)]">Project Messages</h1>
+    <div class="flex items-center gap-4">
+      <a href="{% url 'calendar' %}" class="hover:text-[var(--accent-red)] transition hover:scale-110">
+        <i data-lucide="calendar" class="w-5 h-5"></i>
+      </a>
+      <a href="{% url 'settings' %}" class="hover:text-[var(--accent-red)] transition hover:scale-110">
+        <i data-lucide="settings" class="w-5 h-5"></i>
+      </a>
+      <div class="relative">
+        <button id="profileBtn" class="hover:text-[var(--accent-red)] transition hover:scale-110 focus:outline-none">
+          <i data-lucide="user-circle" class="w-5 h-5"></i>
+        </button>
+        <div id="dropdownMenu" class="hidden absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded shadow-md z-50">
+          <div class="px-4 py-2 text-xs text-gray-600 border-b">Hello, {{ request.user.username }}</div>
+          <a href="{% url 'logout' %}" class="block px-4 py-2 text-xs text-red-600 hover:bg-gray-100">Logout</a>
         </div>
-      {% empty %}
-        <p class="text-gray-500">No messages yet.</p>
-      {% endfor %}
+      </div>
     </div>
+  </header>
 
-    <!-- Send new message -->
-    <form id="chat-form" method="post" enctype="multipart/form-data" class="mt-4">
-      {% csrf_token %}
-      <textarea id="message-input" name="body" rows="2" class="w-full border rounded p-2 mb-2" placeholder="Type your message..."></textarea>
+  <!-- Main Layout -->
+  <main class="flex-1 flex overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-1/5 bg-[var(--panel-bg)] border-r border-gray-300 p-4 overflow-y-auto text-base">
+      <nav class="flex flex-col gap-3">
+        <a href="{% url 'project_list' %}" class="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)]">
+          <i data-lucide="folder" class="w-5 h-5"></i> <span>Projects</span>
+        </a>
+        <a href="{% url 'all_tasks' %}" class="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)]">
+          <i data-lucide="list-todo" class="w-5 h-5"></i> <span>Tasks</span>
+        </a>
+        <a href="{% url 'components' %}" class="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)]">
+          <i data-lucide="package" class="w-5 h-5"></i> <span>Components</span>
+        </a>
 
-      <label class="block text-sm font-medium mb-1">Attach a file</label>
-      <input type="file" name="file" class="mb-3">
+        <!-- Messages Dropdown -->
+        <details open class="group">
+          <summary class="flex items-center gap-2 px-2 py-1.5 rounded-md bg-[#f4e8e7] text-[var(--accent-red)] font-semibold cursor-pointer">
+            <i data-lucide="messages-square" class="w-4 h-4"></i> <span>Messages</span>
+            <i data-lucide="chevron-down" class="ml-auto group-open:rotate-180 transition-transform w-3 h-3"></i>
+          </summary>
+          <ul class="mt-1 ml-4 space-y-1 text-xs">
+            {% for p in all_projects %}
+              <li>
+                <a href="{% url 'project_messages' project_id=p.id %}"
+                   class="block px-2 py-1 rounded-md transition {% if p.id == project.id %}bg-[var(--accent-red)] text-white font-semibold{% else %}text-gray-700 hover:text-[var(--accent-red)] hover:bg-[#fdf3f2]{% endif %}">
+                  {{ p.name }}
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        </details>
 
-      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
-        Send
-      </button>
-    </form>
+        <a href="alerts.html" class="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)]">
+          <i data-lucide="bell" class="w-4 h-4"></i> <span>Alerts</span>
+        </a>
+      </nav>
+    </aside>
 
-    <!-- Back link -->
-    <div class="mt-6">
-      <a href="{% url 'project_detail' project.id %}" class="text-blue-600 hover:underline text-sm">← Back to Project</a>
-    </div>
-  </div>
+    <!-- Main Content -->
+    <section class="flex-1 p-4">
+      <div class="max-w-3xl mx-auto h-[calc(100vh-80px)] flex flex-col bg-[var(--panel-bg)] border border-[#e7c2c4] rounded-lg shadow p-4">
 
-  <!-- WebSocket logic -->
+        <h2 class="text-lg font-playfair text-[var(--accent-red)] mb-2">Messages for "{{ project.name }}"</h2>
+
+        <!-- Scrollable Messages -->
+        <div id="chat-box" class="flex-1 overflow-y-auto space-y-3 border border-gray-300 bg-white p-3 rounded text-sm leading-snug mb-3">
+          {% for msg in messages %}
+            <div class="border-b border-gray-200 pb-1">
+              <div class="text-xs text-gray-600 font-medium">{{ msg.sender.username }} — {{ msg.timestamp|date:"M d, Y H:i" }}</div>
+              {% if msg.body %}
+                <p class="text-[var(--text-dark)] text-sm">{{ msg.body }}</p>
+              {% endif %}
+              {% if msg.file %}
+                {% with msg.file.name|lower as filename %}
+                  {% if ".jpg" in filename or ".jpeg" in filename or ".png" in filename %}
+                    <img src="{{ msg.file.url }}" alt="Uploaded Image" class="mt-2 max-w-xs rounded shadow" />
+                  {% elif ".pdf" in filename %}
+                    <a href="{{ msg.file.url }}" target="_blank" class="text-[var(--accent-red)] underline text-xs mt-1 block">View PDF</a>
+                  {% else %}
+                    <a href="{{ msg.file.url }}" download class="text-[var(--accent-red)] underline text-xs mt-1 block">Download Attachment</a>
+                  {% endif %}
+                {% endwith %}
+              {% endif %}
+            </div>
+          {% empty %}
+            <p class="text-gray-500">No messages yet.</p>
+          {% endfor %}
+        </div>
+
+        <!-- Fixed Message Input -->
+        <form method="post" enctype="multipart/form-data" class="border-t border-gray-300 pt-3 space-y-2">
+          {% csrf_token %}
+          <textarea name="body" rows="2" class="w-full border border-gray-300 rounded p-2 text-sm" placeholder="Type your message..."></textarea>
+          <input type="file" name="file" class="block w-full text-sm border border-gray-300 rounded p-2 bg-white" />
+          <button type="submit" class="bg-[var(--accent-red)] text-white px-4 py-2 rounded hover:bg-red-700 transition w-full">Send</button>
+        </form>
+
+        <div class="mt-2 text-right">
+          <a href="{% url 'lead_dashboard' %}" class="text-[var(--accent-red)] hover:underline text-xs">Dashboard</a>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
   <script>
+    lucide.createIcons();
+    const profileBtn = document.getElementById('profileBtn');
+    const dropdownMenu = document.getElementById('dropdownMenu');
+
+    profileBtn.addEventListener('click', () => dropdownMenu.classList.toggle('hidden'));
+    document.addEventListener('click', (e) => {
+      if (!profileBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
+        dropdownMenu.classList.add('hidden');
+      }
+    });
+
     const projectId = "{{ project.id }}";
-    const username = "{{ request.user.username }}";
-    const chatSocket = new WebSocket(
-      `ws://${window.location.host}/ws/project/${projectId}/`
-    );
+    const chatSocket = new WebSocket(`ws://${window.location.host}/ws/project/${projectId}/`);
 
     chatSocket.onmessage = function (e) {
       const data = JSON.parse(e.data);
       const chatBox = document.getElementById("chat-box");
 
-      const messageDiv = document.createElement("div");
-      messageDiv.classList.add("border-b", "pb-2");
+      const div = document.createElement("div");
+      div.className = "border-b pb-1 border-gray-200";
 
-      const senderInfo = document.createElement("div");
-      senderInfo.className = "text-sm text-gray-600 font-medium";
-      senderInfo.innerHTML = `${data.sender} — ${data.timestamp}`;
+      const sender = document.createElement("div");
+      sender.className = "text-xs text-gray-600 font-medium";
+      sender.textContent = `${data.sender} — ${data.timestamp}`;
 
-      const messageText = document.createElement("p");
-      messageText.className = "text-gray-800";
-      messageText.textContent = data.message;
+      const body = document.createElement("p");
+      body.className = "text-[var(--text-dark)] text-sm";
+      body.textContent = data.message;
 
-      messageDiv.appendChild(senderInfo);
-      messageDiv.appendChild(messageText);
-      chatBox.appendChild(messageDiv);
+      div.appendChild(sender);
+      div.appendChild(body);
+      chatBox.appendChild(div);
       chatBox.scrollTop = chatBox.scrollHeight;
     };
-
-    chatSocket.onclose = function (e) {
-      console.error("Chat socket closed unexpectedly");
-    };
   </script>
-
 </body>
 </html>

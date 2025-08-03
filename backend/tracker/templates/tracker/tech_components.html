@@ -5,68 +5,90 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Tech Components</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --accent-red: #a51c30;
+      --bg-softest: #f8f6f3;
+      --panel-bg: #f6f3f0;
+      --text-dark: #1A1A1A;
+    }
+    .font-playfair { font-family: 'Playfair Display', serif; }
+    .font-inter { font-family: 'Inter', sans-serif; }
+  </style>
 </head>
-<body class="bg-purple-100 font-sans">
 
-  <div class="flex h-screen">
-    <!-- Sidebar -->
-    <aside class="w-16 sm:w-52 bg-white shadow-md rounded-r-2xl p-4 flex flex-col justify-between">
-      <div class="space-y-6">
-        <a href="#" class="flex items-center gap-2">
-          <img src="https://img.icons8.com/ios-filled/50/home.png" class="w-6" />
-          <span class="hidden sm:inline">Projects</span>
-        </a>
-        <a href="#" class="flex items-center gap-2">
-          <img src="https://img.icons8.com/ios-filled/50/edit.png" class="w-6" />
-          <span class="hidden sm:inline">My Tasks</span>
-        </a>
-        <a href="#" class="flex items-center gap-2 font-bold">
-          <img src="https://img.icons8.com/ios-filled/50/gear.png" class="w-6" />
-          <span class="hidden sm:inline">Components</span>
-        </a>
-        <a href="#" class="flex items-center gap-2">
-          <img src="https://img.icons8.com/ios-filled/50/speech-bubble.png" class="w-6" />
-          <span class="hidden sm:inline">Messages</span>
-        </a>
-        <a href="#" class="flex items-center gap-2">
-          <img src="https://img.icons8.com/ios-filled/50/bell.png" class="w-6" />
-          <span class="hidden sm:inline">Alerts</span>
-        </a>
+<body class="font-inter font-semibold bg-[var(--bg-softest)] text-[var(--text-dark)] min-h-screen flex flex-col">
+
+  <!-- Top Bar -->
+  <header class="bg-[var(--panel-bg)] shadow-md px-6 py-4 flex justify-between items-center h-[72px] border-b border-gray-300 relative">
+    <h1 class="text-2xl font-playfair text-[var(--accent-red)]">All Components</h1>
+    <div class="flex items-center gap-6 relative">
+      <a href="#" class="hover:text-[var(--accent-red)] transition hover:scale-110">
+        <i data-lucide="calendar" class="w-6 h-6"></i>
+      </a>
+      <a href="#" class="hover:text-[var(--accent-red)] transition hover:scale-110">
+        <i data-lucide="settings" class="w-6 h-6"></i>
+      </a>
+      <div class="relative">
+        <button id="profileBtn" class="hover:text-[var(--accent-red)] transition hover:scale-110 focus:outline-none">
+          <i data-lucide="user-circle" class="w-6 h-6"></i>
+        </button>
+        <div id="dropdownMenu" class="hidden absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded shadow-md z-50">
+          <div class="px-4 py-2 text-sm text-gray-600 border-b">Hello, {{ request.user.username }}</div>
+          <a href="{% url 'logout' %}" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Logout</a>
+        </div>
       </div>
+    </div>
+  </header>
+
+  <!-- Layout -->
+  <main class="flex-1 flex overflow-hidden min-h-[calc(100vh-72px)]">
+    <!-- Sidebar -->
+    <aside class="w-1/5 bg-[var(--panel-bg)] border-r border-gray-300 p-6 overflow-y-auto">
+      <nav class="flex flex-col gap-4 text-[var(--text-dark)]">
+        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)] transition-all">
+          <i data-lucide="folder" class="w-5 h-5"></i> <span>Projects</span>
+        </a>
+        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)] transition-all">
+          <i data-lucide="list-todo" class="w-5 h-5"></i> <span>My Tasks</span>
+        </a>
+        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-md bg-[#f4e8e7] text-[var(--accent-red)] font-semibold">
+          <i data-lucide="package" class="w-5 h-5"></i> <span>Components</span>
+        </a>
+        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)] transition-all">
+          <i data-lucide="messages-square" class="w-5 h-5"></i> <span>Messages</span>
+        </a>
+        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)] transition-all">
+          <i data-lucide="bell" class="w-5 h-5"></i> <span>Alerts</span>
+        </a>
+      </nav>
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 p-6 space-y-8 overflow-y-auto">
-      <!-- Top bar -->
-      <div class="flex justify-between items-center">
-        <h1 class="text-2xl font-bold">All Components</h1>
-        <div class="flex gap-4">
-          <img src="https://img.icons8.com/ios-glyphs/30/calendar.png" />
-          <img src="https://img.icons8.com/ios-glyphs/30/settings.png" />
-          <img src="https://img.icons8.com/ios-glyphs/30/user.png" />
-        </div>
-      </div>
+    <section class="flex-1 p-6 overflow-y-auto space-y-10">
 
-      <!-- All Component Cards -->
+      <!-- Component Cards -->
       <div class="space-y-4">
         {% for component in components %}
-          <div class="bg-white p-6 rounded-lg shadow flex items-center justify-between">
+          <div class="bg-white border border-[#e7c2c4] p-4 rounded-lg shadow flex items-center justify-between">
             <div>
-              <h2 class="text-xl font-semibold">{{ component.name }}</h2>
+              <h2 class="text-lg font-semibold text-[var(--accent-red)]">{{ component.name }}</h2>
             </div>
             <div class="w-2/3 bg-gray-200 rounded-full h-4 overflow-hidden mx-4">
-              <div class="bg-black h-full rounded-full" style="width: {{ component.progress }}%;"></div>
+              <div class="bg-[var(--accent-red)] h-full rounded-full" style="width: {{ component.progress }}%;"></div>
             </div>
-            <span class="text-lg font-bold">{{ component.progress }}%</span>
+            <span class="text-md font-bold">{{ component.progress }}%</span>
           </div>
         {% empty %}
-          <p class="text-gray-500">No components found.</p>
+          <p class="text-sm text-gray-500">No components found.</p>
         {% endfor %}
       </div>
 
-      <!-- Asset Lookup Section -->
-      <div class="bg-white p-6 rounded-lg shadow space-y-4 mt-10">
-        <h2 class="text-xl font-bold">Asset Lookup</h2>
+      <!-- Asset Lookup -->
+      <div class="bg-white border border-[#e7c2c4] p-6 rounded-lg shadow space-y-4">
+        <h2 class="text-xl font-playfair text-[var(--accent-red)]">Asset Lookup</h2>
 
         <form method="post" enctype="multipart/form-data" class="space-y-4">
           {% csrf_token %}
@@ -82,7 +104,7 @@
           <label class="block text-sm font-medium text-gray-700">Search Query</label>
           <input type="text" name="asset_name" placeholder="e.g. BTM1234" value="{{ search_query }}" class="border p-2 rounded w-full" />
 
-          <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 w-full">Search</button>
+          <button type="submit" class="bg-[var(--accent-red)] text-white px-6 py-2 rounded hover:bg-red-700 w-full">Search</button>
         </form>
 
         {% if file_uploaded and last_file_url %}
@@ -134,8 +156,23 @@
           <p class="text-yellow-700 mt-4">No results found for "<strong>{{ search_query }}</strong>".</p>
         {% endif %}
       </div>
-    </main>
-  </div>
+    </section>
+  </main>
 
+  <script>
+    lucide.createIcons();
+    const profileBtn = document.getElementById('profileBtn');
+    const dropdownMenu = document.getElementById('dropdownMenu');
+
+    profileBtn.addEventListener('click', () => {
+      dropdownMenu.classList.toggle('hidden');
+    });
+
+    document.addEventListener('click', function (e) {
+      if (!profileBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
+        dropdownMenu.classList.add('hidden');
+      }
+    });
+  </script>
 </body>
 </html>
