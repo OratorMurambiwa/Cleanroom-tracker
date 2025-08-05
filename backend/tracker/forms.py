@@ -194,3 +194,27 @@ class CustomUserCreationForm(UserCreationForm):
     class Meta:
         model = User
         fields = ("username", "email", "password1", "password2", "group")
+
+
+
+class ProjectForm(forms.ModelForm):
+    class Meta:
+        model = Project
+        fields = ['name', 'description', 'assigned_users']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'placeholder': 'Project Name',
+                'class': 'w-full border border-gray-300 rounded px-3 py-2 text-sm'
+            }),
+            'description': forms.Textarea(attrs={
+                'placeholder': 'Project Description',
+                'class': 'w-full border border-gray-300 rounded px-3 py-2 text-sm'
+            }),
+            'assigned_users': forms.SelectMultiple(attrs={
+                'class': 'w-full border border-gray-300 rounded px-3 py-2 text-sm'
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['assigned_users'].queryset = User.objects.all()  

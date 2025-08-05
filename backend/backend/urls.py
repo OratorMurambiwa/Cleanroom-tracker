@@ -75,6 +75,8 @@ urlpatterns = [
     path('tech/projects/<int:project_id>/', views.tech_project_detail_view, name='tech_project_detail'),
     path('tech/components/', views.tech_components_view, name='tech_components'),
     path('tech/components/<int:component_id>/', views.tech_component_detail_view, name='tech_component_detail'),
+    path('create-project/', views.create_project, name='create_project'),
+
 
     # Lookup
     path('asset-lookup/', asset_lookup_view, name='asset_lookup'),

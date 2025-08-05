@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Project Details | Cleanroom Tracker</title>
+  <title>Project Dashboard | Cleanroom Tracker</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -72,12 +72,13 @@
 
     <!-- Page Content -->
     <section class="flex-1 p-6 animate-fade-in overflow-y-auto pb-24">
-      <div class="mb-4">
-        <a href="{% url 'lead_dashboard' %}" class="inline-flex items-center gap-2 bg-[var(--accent-red)] text-white px-4 py-2 rounded hover:bg-red-700 text-sm">
-          <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Dashboard
-        </a>
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-playfair text-[var(--accent-red)]">My Projects</h2>
+        <button onclick="document.getElementById('addModal').classList.remove('hidden')" class="bg-[var(--accent-red)] text-white px-4 py-2 rounded hover:bg-red-700 text-sm">
+          + Add Project
+        </button>
       </div>
-      <h2 class="text-xl font-playfair text-[var(--accent-red)] mb-4">My Projects</h2>
+
       {% for project in projects %}
         <div class="bg-white rounded-xl shadow border border-[#e7c2c4] p-4 mb-4">
           <div class="flex justify-between items-center">
@@ -99,15 +100,35 @@
     </section>
   </main>
 
+  <!-- Modal -->
+  <div id="addModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="bg-white w-full max-w-lg p-6 rounded shadow-xl border border-gray-300">
+      <h2 class="text-xl font-semibold text-[var(--accent-red)] mb-4">New Project</h2>
+      <form method="post" action="{% url 'create_project' %}">
+        {% csrf_token %}
+        <input name="name" type="text" placeholder="Project Name" required class="w-full mb-3 border border-gray-300 rounded p-2">
+        <textarea name="description" rows="3" placeholder="Project Description" required class="w-full mb-3 border border-gray-300 rounded p-2"></textarea>
+
+        <label class="block text-sm font-medium mb-1">Contributors</label>
+        <select name="contributors" multiple class="w-full border border-gray-300 p-2 rounded mb-4">
+          {% for user in all_users %}
+            <option value="{{ user.id }}">{{ user.get_full_name|default:user.username }}</option>
+          {% endfor %}
+        </select>
+
+        <div class="flex justify-end gap-2">
+          <button type="button" onclick="document.getElementById('addModal').classList.add('hidden')" class="px-4 py-2 border border-gray-300 rounded">Cancel</button>
+          <button type="submit" class="bg-[var(--accent-red)] hover:bg-red-700 text-white px-4 py-2 rounded">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     lucide.createIcons();
     const profileBtn = document.getElementById('profileBtn');
     const dropdownMenu = document.getElementById('dropdownMenu');
-
-    profileBtn.addEventListener('click', () => {
-      dropdownMenu.classList.toggle('hidden');
-    });
-
+    profileBtn.addEventListener('click', () => dropdownMenu.classList.toggle('hidden'));
     document.addEventListener('click', function (e) {
       if (!profileBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
         dropdownMenu.classList.add('hidden');

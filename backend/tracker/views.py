@@ -286,6 +286,8 @@ def component_list_view(request):
 
     
 # ----------------------- Task Views -----------------------
+
+
 @login_required
 def assign_tasks_view(request, component_id=None):
     projects = Project.objects.all()
@@ -298,14 +300,26 @@ def assign_tasks_view(request, component_id=None):
         selected_component = get_object_or_404(Component, id=component_id)
 
     if request.method == 'POST':
-        Task.objects.create(
+        # Create the task without components
+        task = Task.objects.create(
             title=request.POST.get('title'),
             description=request.POST.get('description'),
             project=Project.objects.get(id=request.POST.get('project')) if request.POST.get('project') else (selected_component.project if selected_component else None),
-            component=Component.objects.get(id=request.POST.get('component')) if request.POST.get('component') else selected_component,
             assigned_to=User.objects.get(id=request.POST.get('technician')),
             due_date=request.POST.get('due_date')
         )
+
+        # Handle the components (many-to-many field)
+        component_ids = request.POST.getlist('component')
+        if component_ids:
+            selected_components = Component.objects.filter(id__in=component_ids)
+        elif selected_component:
+            selected_components = [selected_component]
+        else:
+            selected_components = []
+
+        task.components.set(selected_components)
+
         return redirect('assign_tasks')  # You could redirect elsewhere if needed
 
     return render(request, 'tracker/assigntasks.html', {
@@ -315,6 +329,7 @@ def assign_tasks_view(request, component_id=None):
         'pending_tasks': tasks,
         'selected_component': selected_component
     })
+
 
     
 
@@ -377,6 +392,8 @@ def project_task_detail_view(request, task_id):
     return render(request, 'tracker/project_task_detail.html', {'task': task})
 
 
+
+
 @login_required
 def approve_task(request, task_id):
     task = get_object_or_404(Task, id=task_id)
@@ -390,15 +407,21 @@ def approve_task(request, task_id):
         if task.project:
             update_project_progress(task.project)
 
-        # Update component progress and timestamp
-        if task.component:
-            update_component_progress(task.component)
-            task.component.updated_at = timezone.now()  # ✅ Force timestamp update
-            task.component.save()
+        # Update progress for all linked components
+        for component in task.components.all():
+            update_component_progress(component)
+            component.updated_at = timezone.now()
+            component.save()
 
         messages.success(request, f"Task '{task.title}' approved.")
-    
-    return redirect('component_detail', component_id=task.component.id)
+
+    # Redirect to the first component's detail view (or somewhere else)
+    first_component = task.components.first()
+    if first_component:
+        return redirect('component_detail', component_id=first_component.id)
+    else:
+        return redirect('all_tasks')  # fallback if no components are linked
+
 
 
 
@@ -1026,11 +1049,7 @@ def upload_tasks_from_traveler_view(request):
         'form': form,
         'stored_file': stored_file,
     })
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from django.contrib.auth.models import User
-from django.shortcuts import render, redirect
-from .models import Project, Component
+
 
 
 @login_required
@@ -1223,3 +1242,27 @@ def view_pending_tasks(request):
     return render(request, 'tracker/view_pending_tasks.html', {
         'pending_tasks': pending_tasks
     })
+
+
+
+@login_required
+def create_project(request):
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        description = request.POST.get('description', '').strip()
+        section = request.POST.get('section', '').strip()
+        contributor_ids = request.POST.getlist('contributors')
+
+        if name:
+            project = Project.objects.create(name=name, description=description)
+            
+            contributors = User.objects.filter(id__in=contributor_ids)
+            project.assigned_users.set(contributors)
+
+            messages.success(request, "✅ Project created successfully!")
+            return redirect('lead_dashboard')
+        else:
+            messages.error(request, "❌ Project name is required.")
+            return redirect('lead_dashboard')
+
+    return redirect('lead_dashboard')
