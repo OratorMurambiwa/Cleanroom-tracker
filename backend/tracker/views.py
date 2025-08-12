@@ -183,12 +183,21 @@ def project_list_view(request):
     projects = Project.objects.all()
     return render(request, 'tracker/project_list.html', {'projects': projects})
 
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, get_object_or_404
+from django.db.models import Q
+from .models import Project
+
 @login_required
 def project_detail_view(request, project_id):
     project = get_object_or_404(Project, id=project_id)
-    tasks = project.tasks.all()
     components = project.components.all()
-    
+
+    # Filter tasks to only those assigned to the current user
+    tasks = project.tasks.filter(assigned_to=request.user)
+
+    # Filters
     search_query = request.GET.get('search', '')
     status_filter = request.GET.get('status', 'all')
     sort_by = request.GET.get('sort', '')
@@ -204,9 +213,9 @@ def project_detail_view(request, project_id):
     elif sort_by == 'priority':
         tasks = tasks.order_by('priority')
 
-    users = project.assigned_users.all() if hasattr(project, 'assigned_users') else []
-    documents = project.documents.all() if hasattr(project, 'documents') else []
-    progress = project.progress if hasattr(project, 'progress') else 0
+    # Count the user's filtered tasks only
+    total_tasks = tasks.count()
+    completed_tasks = tasks.filter(is_completed=True).count()
 
     return render(request, 'tracker/project_detail.html', {
         'project': project,
@@ -215,10 +224,11 @@ def project_detail_view(request, project_id):
         'search_query': search_query,
         'status_filter': status_filter,
         'sort_by': sort_by,
-        'users': users,
-        'documents': documents,
-        'progress': progress,
+        'total_tasks': total_tasks,
+        'completed_tasks': completed_tasks,
     })
+
+
 
 @login_required
 def create_project_view(request):
@@ -630,17 +640,30 @@ def add_team_member(request, project_id):
     
 # ----------------------- Calendar & Tech Dashboard -----------------------
 
+
 @login_required
 def calendar_view(request):
-    tasks = Task.objects.filter(due_date__isnull=False)
-    reminders = Reminder.objects.filter(user=request.user)
+    user = request.user
     today = timezone.now().date()
+    day_plus_2 = today + timedelta(days=2)
+    day_plus_5 = today + timedelta(days=5)
+
+    # Technicians only see their assigned tasks
+    if user.groups.filter(name='technician').exists():
+        tasks = Task.objects.filter(assigned_to=user, due_date__isnull=False)
+    else:
+        tasks = Task.objects.filter(due_date__isnull=False)
+
+    reminders = Reminder.objects.filter(user=user)
 
     return render(request, 'tracker/calendar.html', {
         'tasks': tasks,
         'reminders': reminders,
         'today': today,
+        'day_plus_2': day_plus_2,
+        'day_plus_5': day_plus_5,
     })
+
 
 @login_required
 def create_reminder(request):
@@ -1175,7 +1198,7 @@ def project_messages_view(request, project_id):
         'project': project,
         'messages': messages,
         'form': form,
-        'all_projects': Project.objects.all(),  # 👈 add this line for dropdown
+        'all_projects': Project.objects.all(),  
     })
 
 def landing_page(request):
@@ -1266,3 +1289,44 @@ def create_project(request):
             return redirect('lead_dashboard')
 
     return redirect('lead_dashboard')
+
+def alerts_view(request):
+    # Example alerts - ideally fetched from your database model
+    alerts = [
+        {
+            "title": "Pending Task Approval",
+            "message": "Your submitted task for Project X needs review.",
+            "timestamp": timezone.now(),
+            "link": reversed('tech_tasks'),
+        },
+        {
+            "title": "Component Delivery Delay",
+            "message": "Shipment for component ABC123 is delayed.",
+            "timestamp": timezone.now() - timedelta(hours=4),
+            "link": "",  # or a component detail page
+        },
+    ]
+    return render(request, 'tracker/alerts.html', {'alerts': alerts, 'projects': Project.objects.all()})
+
+
+
+@login_required
+def settings_view(request):
+   
+    if request.method == 'POST':
+        # Example: handle settings save logic
+        dark_mode = request.POST.get('dark_mode') == 'on'
+        notify_tasks = request.POST.get('notify_tasks') == 'on'
+        notify_components = request.POST.get('notify_components') == 'on'
+
+        # You can print or save this to the DB later
+        print("Dark Mode:", dark_mode)
+        print("Notify Tasks:", notify_tasks)
+        print("Notify Components:", notify_components)
+
+
+    return render(request, 'tracker/settings.html', {
+        'projects': Project.objects.all(),  
+    })
+
+

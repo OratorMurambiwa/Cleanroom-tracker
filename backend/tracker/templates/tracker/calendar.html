@@ -24,9 +24,11 @@
       <button id="openModalBtn" class="bg-[var(--accent-red)] text-white px-4 py-2 rounded hover:bg-red-700 transition">
         Set Reminder
       </button>
-      <a href="{% url 'assign_tasks' %}" class="bg-[var(--accent-red)] text-white px-4 py-2 rounded hover:bg-red-700 transition">
-        Add Task
-      </a>
+      {% if not request.user.groups.all.0.name == "technician" %}
+        <a href="{% url 'assign_tasks' %}" class="bg-[var(--accent-red)] text-white px-4 py-2 rounded hover:bg-red-700 transition">
+          Add Task
+        </a>
+      {% endif %}
     </div>
   </div>
 
@@ -77,7 +79,7 @@
             {
               title: "{{ task.title|escapejs }}",
               start: "{{ task.due_date|date:'Y-m-d' }}",
-              color: "{% if task.is_completed %}green{% elif task.due_date < today %}red{% else %}orange{% endif %}",
+              color: "{% if task.due_date <= today %}red{% elif task.due_date <= day_plus_5 and task.due_date > day_plus_2 %}orange{% elif task.due_date <= day_plus_2 %}orange{% else %}green{% endif %}",
               url: "{% url 'task_detail' task.id %}"
             },
           {% endfor %}

@@ -3,51 +3,145 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>My Tasks</title>
+  <title>My Tasks | Cleanroom Tracker</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --accent-red: #a51c30;
+      --bg-softest: #f8f6f3;
+      --panel-bg: #f6f3f0;
+      --text-dark: #1A1A1A;
+    }
+    .font-playfair { font-family: 'Playfair Display', serif; }
     .font-inter { font-family: 'Inter', sans-serif; }
   </style>
 </head>
-<body class="bg-gray-100 text-gray-800 font-inter">
+<body class="font-inter font-semibold bg-[var(--bg-softest)] text-[var(--text-dark)] min-h-screen h-screen flex flex-col">
 
-  <header class="bg-white shadow-md px-6 py-4 flex justify-between items-center">
-    <h1 class="text-2xl font-semibold text-[#a51c30]">My Assigned Tasks</h1>
-    <a href="{% url 'tech_dashboard' %}" class="text-sm text-[#a51c30] hover:underline">← Back to Dashboard</a>
+  <!-- Top Bar -->
+  <header class="bg-[var(--panel-bg)] shadow-md px-6 py-4 flex justify-between items-center h-[72px] border-b border-gray-300 relative">
+    <h1 class="text-2xl font-playfair text-[var(--accent-red)]">My Tasks</h1>
+    <div class="flex items-center gap-6 relative">
+      <a href="{% url 'calendar' %}" class="hover:text-[var(--accent-red)] transition hover:scale-110">
+        <i data-lucide="calendar" class="w-6 h-6"></i>
+      </a>
+      <a href="{% url 'settings' %}" class="hover:text-[var(--accent-red)] transition hover:scale-110">
+        <i data-lucide="settings" class="w-6 h-6"></i>
+      </a>
+      <div class="relative">
+        <button id="profileBtn" class="hover:text-[var(--accent-red)] transition hover:scale-110 focus:outline-none">
+          <i data-lucide="user-circle" class="w-6 h-6"></i>
+        </button>
+        <div id="dropdownMenu" class="hidden absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded shadow-md z-50">
+          <div class="px-4 py-2 text-sm text-gray-600 border-b">Hello, {{ request.user.username }}</div>
+          <a href="{% url 'logout' %}" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Logout</a>
+        </div>
+      </div>
+    </div>
   </header>
 
-  <main class="p-6">
-    {% if tasks %}
-      <ul class="space-y-4">
-        {% for task in tasks %}
-          <li class="bg-white shadow-sm rounded-lg p-4 border hover:bg-gray-50 transition">
-            <a href="{% url 'task_detail' task.id %}" class="block">
-              <h2 class="text-lg font-semibold text-blue-700 hover:underline">{{ task.title }}</h2>
-              <p class="text-sm text-gray-600">{{ task.description }}</p>
-              <div class="text-xs text-gray-500 mt-2">
-                <p>Status: 
-                  {% if task.is_approved %}
-                    <span class="text-green-600 font-medium">Approved</span>
-                  {% elif task.completed %}
-                    <span class="text-yellow-600 font-medium">Completed</span>
-                  {% else %}
-                    <span class="text-gray-600">Pending</span>
-                  {% endif %}
-                </p>
-                {% if task.due_date %}
-                  <p>Due: {{ task.due_date|date:"F j, Y" }}</p>
-                {% endif %}
-              </div>
-            </a>
-          </li>
+  <!-- Main Layout -->
+  <main class="flex-1 flex flex-col lg:flex-row overflow-hidden">
+  <!-- Sidebar -->
+  <aside class="w-full lg:w-1/5 bg-[var(--panel-bg)] border-r border-gray-300 p-6 overflow-y-auto">
+    <nav class="flex flex-col gap-4 text-[var(--text-dark)]">
+
+      <a href="{% url 'tech_project_list' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)] transition-all">
+        <i data-lucide="folder" class="w-5 h-5"></i> <span>Projects</span>
+      </a>
+
+      {% if projects %}
+        {% for project in projects %}
+          <a href="{% url 'tech_project_detail' project.id %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)] transition-all">
+            <i data-lucide="dot" class="w-5 h-5"></i> <span>{{ project.name }}</span>
+          </a>
         {% endfor %}
-      </ul>
-    {% else %}
-      <p class="text-gray-600">You have no tasks assigned.</p>
-    {% endif %}
+      {% else %}
+        <p class="text-sm text-gray-400 px-3">No projects</p>
+      {% endif %}
+
+      <a href="{% url 'tech_tasks' %}" class="flex items-center gap-3 px-3 py-2 rounded-md bg-[#f4e8e7] text-[var(--accent-red)] font-semibold transition-all">
+        <i data-lucide="list-todo" class="w-5 h-5"></i> <span>My Tasks</span>
+      </a>
+
+      <a href="{% url 'tech_components' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)] transition-all">
+        <i data-lucide="package" class="w-5 h-5"></i> <span>Components</span>
+      </a>
+
+      {% if projects %}
+        <a href="{% url 'project_messages' projects.0.id %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)] transition-all">
+          <i data-lucide="messages-square" class="w-5 h-5"></i> <span>Messages</span>
+        </a>
+      {% else %}
+        <span class="flex items-center gap-3 px-3 py-2 rounded-md text-gray-400 cursor-not-allowed">
+          <i data-lucide="messages-square" class="w-5 h-5"></i> <span>Messages</span>
+        </span>
+      {% endif %}
+
+      <a href="{% url 'alerts' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)] transition-all">
+        <i data-lucide="bell" class="w-5 h-5"></i> <span>Alerts</span>
+      </a>
+    </nav>
+  </aside>
+
+
+
+
+    <!-- Task Content -->
+    <section class="flex-1 overflow-y-auto p-6">
+      {% if tasks %}
+        <ul class="space-y-4">
+          {% for task in tasks %}
+            <li class="bg-white shadow-sm rounded-lg p-4 border hover:bg-gray-50 transition">
+              <a href="{% url 'task_detail' task.id %}" class="block">
+                <h2 class="text-lg font-semibold text-blue-700 hover:underline">{{ task.title }}</h2>
+                <p class="text-sm text-gray-600">{{ task.description }}</p>
+                <div class="text-xs text-gray-500 mt-2">
+                  <p>Status: 
+                    {% if task.is_approved %}
+                      <span class="text-green-600 font-medium">Approved</span>
+                    {% elif task.completed %}
+                      <span class="text-yellow-600 font-medium">Completed</span>
+                    {% else %}
+                      <span class="text-gray-600">Pending</span>
+                    {% endif %}
+                  </p>
+                  {% if task.due_date %}
+                    <p>Due: {{ task.due_date|date:"F j, Y" }}</p>
+                  {% endif %}
+                </div>
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-gray-600">You have no tasks assigned.</p>
+      {% endif %}
+    </section>
   </main>
 
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      lucide.createIcons();
+
+      const profileBtn = document.getElementById('profileBtn');
+      const dropdownMenu = document.getElementById('dropdownMenu');
+
+      if (profileBtn && dropdownMenu) {
+        profileBtn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          dropdownMenu.classList.toggle('hidden');
+        });
+
+        document.addEventListener('click', function (e) {
+          if (!dropdownMenu.contains(e.target) && !profileBtn.contains(e.target)) {
+            dropdownMenu.classList.add('hidden');
+          }
+        });
+      }
+    });
+  </script>
 </body>
 </html>
-

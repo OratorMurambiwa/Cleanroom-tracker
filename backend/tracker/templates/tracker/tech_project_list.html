@@ -5,8 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>All Projects | Cleanroom Tracker</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --accent-red: #a51c30;
+      --bg-softest: #FFF8DC;
+      --panel-bg: #f6f3f0;
+      --text-dark: #1A1A1A;
+    }
     body { font-family: 'Inter', sans-serif; }
     @keyframes fade-in {
       from { opacity: 0; transform: translateY(8px); }
@@ -17,64 +24,109 @@
     }
   </style>
 </head>
-<body class="bg-[#F9FAFB] text-[#111827] min-h-screen flex">
+<body class="bg-[var(--bg-softest)] text-[var(--text-dark)] min-h-screen flex flex-col">
 
-  <!-- Sidebar -->
-  <aside class="w-64 bg-[#0F172A] text-white h-screen p-6 flex flex-col justify-between">
-    <div>
-      <h1 class="text-2xl font-bold mb-8 text-[#F6C90E]">Cleanroom</h1>
-      <nav class="space-y-4">
-        <a href="#" class="flex items-center gap-3 text-[#F6C90E] font-semibold">
-          <span>🏠</span> <span>Dashboard</span>
+  <!-- Top Bar -->
+  <header class="bg-[var(--panel-bg)] shadow-md px-6 py-4 flex justify-between items-center h-[72px] border-b border-gray-300">
+    <h1 class="text-2xl font-bold text-[var(--accent-red)]">All Projects</h1>
+    <div class="flex items-center gap-6">
+      <a href="{% url 'calendar' %}" class="hover:text-[var(--accent-red)] transition hover:scale-110">
+        <i data-lucide="calendar" class="w-6 h-6"></i>
+      </a>
+      <a href="settings.html" class="hover:text-[var(--accent-red)] transition hover:scale-110">
+        <i data-lucide="settings" class="w-6 h-6"></i>
+      </a>
+      <div class="relative">
+        <button id="profileBtn" class="hover:text-[var(--accent-red)] transition hover:scale-110 focus:outline-none">
+          <i data-lucide="user-circle" class="w-6 h-6"></i>
+        </button>
+        <div id="dropdownMenu" class="hidden absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded shadow-md z-50">
+          <div class="px-4 py-2 text-sm text-gray-600 border-b">Hello, {{ request.user.username }}</div>
+          <a href="{% url 'logout' %}" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Logout</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Layout -->
+  <main class="flex-1 flex flex-col lg:flex-row overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-full lg:w-1/5 bg-[var(--panel-bg)] border-r border-gray-300 p-6 overflow-y-auto">
+      <nav class="flex flex-col gap-4 text-[var(--text-dark)]">
+        <a href="{% url 'tech_project_list' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)] transition-all">
+          <i data-lucide="folder" class="w-5 h-5"></i> <span>Projects</span>
         </a>
-        <a href="#" class="flex items-center gap-3 text-gray-400 hover:text-white">
-          <span>📁</span> <span>Projects</span>
+        {% for project in projects %}
+        <a href="{% url 'tech_project_detail' project.id %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)] transition-all">
+          <i data-lucide="dot" class="w-5 h-5"></i> <span>{{ project.name }}</span>
         </a>
-        <a href="#" class="flex items-center gap-3 text-gray-400 hover:text-white">
-          <span>🧪</span> <span>Tasks</span>
+        {% empty %}
+        <p class="text-sm text-gray-400 px-3">No projects</p>
+        {% endfor %}
+        <a href="{% url 'tech_tasks' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)] transition-all">
+          <i data-lucide="list-todo" class="w-5 h-5"></i> <span>My Tasks</span>
         </a>
-        <a href="#" class="flex items-center gap-3 text-gray-400 hover:text-white">
-          <span>🔧</span> <span>Components</span>
+        <a href="{% url 'tech_components' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)] transition-all">
+          <i data-lucide="package" class="w-5 h-5"></i> <span>Components</span>
         </a>
-        <a href="#" class="flex items-center gap-3 text-gray-400 hover:text-white">
-          <span>📨</span> <span>Messages</span>
+        {% if projects %}
+        <a href="{% url 'project_messages' projects.0.id %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)] transition-all">
+          <i data-lucide="messages-square" class="w-5 h-5"></i> <span>Messages</span>
+        </a>
+        {% else %}
+        <span class="flex items-center gap-3 px-3 py-2 rounded-md text-gray-400 cursor-not-allowed">
+          <i data-lucide="messages-square" class="w-5 h-5"></i> <span>Messages</span>
+        </span>
+        {% endif %}
+        <a href="alerts.html" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)] transition-all">
+          <i data-lucide="bell" class="w-5 h-5"></i> <span>Alerts</span>
         </a>
       </nav>
-    </div>
-    <div class="space-y-2">
-      <a href="#" class="text-sm text-gray-400 hover:text-white block">Settings</a>
-      <a href="#" class="text-sm text-red-400 hover:text-red-300 block">Log out</a>
-    </div>
-  </aside>
+    </aside>
 
-  <!-- Main Content -->
-  <main class="flex-1 p-8 animate-fade-in">
-    <div class="mb-8">
-      <h2 class="text-3xl font-bold text-[#0F172A]">All Projects</h2>
-      <p class="text-sm text-gray-500">Browse all active and completed cleanroom projects.</p>
-    </div>
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      {% for project in projects %}
-      <div class="bg-white rounded-xl shadow p-5 border border-gray-100 hover:shadow-md transition">
-        <h3 class="text-lg font-semibold text-[#0F172A] mb-2">{{ project.name }}</h3>
-        <p class="text-sm text-gray-600 mb-1"><strong>Status:</strong> {{ project.status }}</p>
-        <p class="text-sm text-gray-600 mb-1"><strong>Start:</strong> {{ project.start_date }}</p>
-        <p class="text-sm text-gray-600 mb-3"><strong>End:</strong> {{ project.end_date }}</p>
-
-        <div class="w-full bg-gray-200 h-2 rounded-full mb-4">
-          <div class="bg-[#F6C90E] h-2 rounded-full" style="width: {{ project.progress|floatformat:0 }}%;"></div>
+    <!-- Content Section -->
+    <section class="flex-1 overflow-y-auto p-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
+        {% for project in projects %}
+        <div class="bg-white p-4 rounded-xl border border-gray-300 shadow hover:shadow-md transition">
+          <h2 class="text-lg font-semibold text-[var(--accent-red)] mb-1">{{ project.name }}</h2>
+          <p class="text-sm text-gray-600 mb-2">{{ project.description|truncatewords:20 }}</p>
+          <div class="w-full bg-gray-200 h-4 rounded-full overflow-hidden">
+            <div class="bg-black h-4 text-white text-xs text-center" style="width: {{ project.progress|floatformat:0 }}%">
+              {{ project.progress|floatformat:0 }}%
+            </div>
+          </div>
+          <a href="{% url 'tech_project_detail' project.id %}" class="inline-block mt-3 text-sm text-[var(--accent-red)] hover:underline">
+            View Project →
+          </a>
         </div>
-
-        <a href="{% url 'tech_project_detail' project.id %}" class="inline-block text-sm text-white bg-[#F6C90E] px-4 py-1.5 rounded hover:bg-yellow-400 font-medium transition">
-          View Details
-        </a>
+        {% empty %}
+        <p class="text-sm text-gray-500">No projects to display.</p>
+        {% endfor %}
       </div>
-      {% empty %}
-      <p class="text-gray-500 col-span-full text-center text-lg italic">No projects available.</p>
-      {% endfor %}
-    </div>
+    </section>
   </main>
 
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      lucide.createIcons();
+
+      const profileBtn = document.getElementById('profileBtn');
+      const dropdownMenu = document.getElementById('dropdownMenu');
+
+      if (profileBtn && dropdownMenu) {
+        profileBtn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          dropdownMenu.classList.toggle('hidden');
+        });
+
+        document.addEventListener('click', function (e) {
+          if (!dropdownMenu.contains(e.target) && !profileBtn.contains(e.target)) {
+            dropdownMenu.classList.add('hidden');
+          }
+        });
+      }
+    });
+  </script>
 </body>
 </html>
