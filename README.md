@@ -1,4 +1,4 @@
-# 🧼 Cleanroom Communication & Management System
+#  Cleanroom Communication & Management System
 
 A full-stack Django web application that simplifies communication, project tracking, and task assignment in cleanroom research environments.
 
@@ -24,7 +24,6 @@ A full-stack Django web application that simplifies communication, project track
 - **Frontend**: HTML/JS, Tailwind CSS
 - **Extras**: PyMuPDF, python-docx, openpyxl, pandas, channels, Redis
 
----
 
 ## 📦 Installation
 
