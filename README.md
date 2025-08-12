@@ -1,10 +1,10 @@
-#  Cleanroom Communication & Management System
+## Cleanroom Communication & Management System
 
 A full-stack Django web application that simplifies communication, project tracking, and task assignment in cleanroom research environments.
 
 > Built during my Summer 2025 LCLS Internship at SLAC National Accelerator Lab.
 
-
+---
 
 ## 🚀 Features
 
@@ -16,7 +16,7 @@ A full-stack Django web application that simplifies communication, project track
 - 🔍 Asset location lookup from Excel files
 - 🧪 Future support for document-aware AI assistant (WIP)
 
-
+---
 
 ## 🛠 Tech Stack
 
@@ -24,7 +24,7 @@ A full-stack Django web application that simplifies communication, project track
 - **Frontend**: HTML/JS, Tailwind CSS
 - **Extras**: PyMuPDF, python-docx, openpyxl, pandas, channels, Redis
 
-```
+---
 📂 Project Folder Structure
 
 cleanroom-tracker/
@@ -37,7 +37,8 @@ cleanroom-tracker/
 │
 ├── requirements.txt     # List of required Python packages
 └── README.md            # This file
-```
+---
+
 
 ## 📦 Installation
 
@@ -57,7 +58,6 @@ pip install -r requirements.txt
 
 ##4. Run migrations
 ```bash
-cd backend
 python manage.py migrate
 
 ##5. Start the development server
@@ -136,6 +136,3 @@ python manage.py runserver
 The main database is db.sqlite3 in the project folder.
 
 Copy this file regularly to back up your data 
-
-
-
