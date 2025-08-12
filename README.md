@@ -4,7 +4,7 @@ A full-stack Django web application that simplifies communication, project track
 
 > Built during my Summer 2025 LCLS Internship at SLAC National Accelerator Lab.
 
-```
+
 
 ## 🚀 Features
 
@@ -24,7 +24,7 @@ A full-stack Django web application that simplifies communication, project track
 - **Frontend**: HTML/JS, Tailwind CSS
 - **Extras**: PyMuPDF, python-docx, openpyxl, pandas, channels, Redis
 
----
+```
 📂 Project Folder Structure
 
 cleanroom-tracker/
@@ -37,7 +37,7 @@ cleanroom-tracker/
 │
 ├── requirements.txt     # List of required Python packages
 └── README.md            # This file
----
+```
 
 ## 📦 Installation
 
