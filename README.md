@@ -24,6 +24,20 @@ A full-stack Django web application that simplifies communication, project track
 - **Frontend**: HTML/JS, Tailwind CSS
 - **Extras**: PyMuPDF, python-docx, openpyxl, pandas, channels, Redis
 
+---
+📂 Project Folder Structure
+
+cleanroom-tracker/
+│
+├── backend/            #Django project files
+│   ├── tracker/         # App containing most features
+│   ├── templates/       # HTML templates for pages
+│   ├── static/          # CSS, JavaScript, images
+│   └── manage.py        # Main command file
+│
+├── requirements.txt     # List of required Python packages
+└── README.md            # This file
+
 
 ## 📦 Installation
 
@@ -49,41 +63,78 @@ python manage.py migrate
 ```bash
 python manage.py runserver
 
+Open your browser and go to: http://127.0.0.1:8000
+
+
 ##📘 How to Use
 
-🔐 Login
-Select your role: Lead or Technician
-or Create profile if you are a Technician
+#Login
+Go to the login page in your browser.
 
-Use your credentials to log in and access your dashboard
+#Choose your role:
 
-🧑‍🔧 Technician Dashboard
-View and complete assigned tasks
+Lead – manage projects and assign tasks.
 
-Submit task results with notes and file uploads
+Technician – complete assigned tasks.
 
-View task/component progress and team messages
+#Enter your username & password.
 
-🧑‍💼 Lead Dashboard
-Create projects and tasks
+#Lead Dashboard
+Create a Project – Name it, describe it, and add contributors.
 
-Assign tasks to team members and link to components
+Assign Tasks – Either create them manually or upload a traveler document to auto-extract.
 
-Upload traveler documents and extract tasks
+Approve Submissions – Review technicians’ work and mark as approved/rejected.
 
-Approve or reject submissions
+Send Messages – Use in-app chat to communicate within each project.
 
-📁 Document Tools
-Upload PDF/DOCX traveler files
+#Technician Dashboard
+View Assigned Tasks – See what you need to do and deadlines.
 
-Extract task lists starting from specific sections/pages
+Submit Work – Upload files, photos, or notes directly to the task page.
 
-Assign previewed tasks to technicians
+Track Progress – Watch the task and project progress bars update.
 
-🔍 Excel Tools
-Upload a spreadsheet with asset location data
+Chat with Leads – Send/receive project messages without email.
 
-Use the lookup tool to search by name, type, or ID
+#Document Tools
+Upload PDF/DOCX traveler files.
+
+Choose starting section/page for task extraction.
+
+Review extracted tasks in the preview screen before assigning.
+
+#Excel Asset Lookup
+Upload an Excel file with asset locations.
+
+Search by Asset Name, Type, or ID to find where it is stored.
+
+#Maintenance & Troubleshooting
+Restarting the Server:
+
+```bash
+python manage.py runserver
+Creating a New Admin Account:
+
+python manage.py createsuperuser
+
+#If Something Breaks:
+
+#Make sure the virtual environment is active.
+
+#Run:
+
+```bash
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
+
+
+#Database Backups:
+
+The main database is db.sqlite3 in the project folder.
+
+Copy this file regularly to back up your data 
 
 
 
