@@ -37,7 +37,7 @@ cleanroom-tracker/
 │
 ├── requirements.txt     # List of required Python packages
 └── README.md            # This file
-
+---
 
 ## 📦 Installation
 
