@@ -57,6 +57,7 @@ pip install -r requirements.txt
 
 ##4. Run migrations
 ```bash
+cd backend
 python manage.py migrate
 
 ##5. Start the development server
