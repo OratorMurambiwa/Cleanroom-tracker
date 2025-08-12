@@ -4,7 +4,7 @@ A full-stack Django web application that simplifies communication, project track
 
 > Built during my Summer 2025 LCLS Internship at SLAC National Accelerator Lab.
 
----
+```
 
 ## 🚀 Features
 
@@ -16,7 +16,7 @@ A full-stack Django web application that simplifies communication, project track
 - 🔍 Asset location lookup from Excel files
 - 🧪 Future support for document-aware AI assistant (WIP)
 
----
+
 
 ## 🛠 Tech Stack
 
