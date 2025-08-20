@@ -78,6 +78,7 @@ urlpatterns = [
     path('create-project/', views.create_project, name='create_project'),
     path('alerts/', views.alerts_view, name='alerts'),
     path('settings/', views.settings_view, name='settings'),
+    path('api/tasks/<int:task_id>/', views.task_detail_api, name='task_detail_api'),
 
 
     # Lookup

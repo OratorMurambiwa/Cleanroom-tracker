@@ -5,7 +5,8 @@ from django.contrib.auth.models import Group, User
 from django.contrib import messages
 from django.db.models import Q
 from datetime import datetime
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404
+from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 import json
 from django.contrib.auth import logout
@@ -189,45 +190,80 @@ from django.shortcuts import render, get_object_or_404
 from django.db.models import Q
 from .models import Project
 
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404, render
+from django.db.models import Q
+
+
 @login_required
 def project_detail_view(request, project_id):
     project = get_object_or_404(Project, id=project_id)
     components = project.components.all()
 
-    # Filter tasks to only those assigned to the current user
-    tasks = project.tasks.filter(assigned_to=request.user)
+    user = request.user
+    is_technician = user.groups.filter(name__iexact='technician').exists()
+    is_lead = user.is_staff or user.groups.filter(name__in=['lead', 'project_lead']).exists()
 
-    # Filters
-    search_query = request.GET.get('search', '')
-    status_filter = request.GET.get('status', 'all')
-    sort_by = request.GET.get('sort', '')
+    tasks_qs = project.tasks.select_related('assigned_to')
 
+    if is_technician and not (user.is_superuser or is_lead):
+        tasks = tasks_qs.filter(assigned_to=user)
+    else:
+        tasks = tasks_qs
+
+    # --------- FILTER INPUTS ----------
+    search_query = request.GET.get('search', '').strip()
+    status_filter = request.GET.get('status', '').lower()
+    assigned_to_filter = request.GET.get('assigned_to', '').strip()
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    sort_by = request.GET.get('sort', '').lower()
+
+    # --------- APPLY FILTERS ----------
     if search_query:
         tasks = tasks.filter(Q(title__icontains=search_query) | Q(description__icontains=search_query))
+
     if status_filter == 'completed':
-        tasks = tasks.filter(is_completed=True)
-    elif status_filter == 'pending':
-        tasks = tasks.filter(is_completed=False)
+        tasks = tasks.filter(completed=True, is_approved=False)
+    elif status_filter == 'approved':
+        tasks = tasks.filter(is_approved=True)
+    elif status_filter == 'todo':
+        tasks = tasks.filter(completed=False, is_approved=False)
+
+    if assigned_to_filter:
+        tasks = tasks.filter(assigned_to__username__icontains=assigned_to_filter)
+
+    if start_date:
+        tasks = tasks.filter(due_date__gte=start_date)
+    if end_date:
+        tasks = tasks.filter(due_date__lte=end_date)
+
     if sort_by == 'due':
         tasks = tasks.order_by('due_date')
     elif sort_by == 'priority':
-        tasks = tasks.order_by('priority')
+        tasks = tasks.order_by('-priority')
 
-    # Count the user's filtered tasks only
     total_tasks = tasks.count()
-    completed_tasks = tasks.filter(is_completed=True).count()
+    completed_tasks = tasks.filter(completed=True, is_approved=False).count()
+    approved_tasks = tasks.filter(is_approved=True).count()
 
-    return render(request, 'tracker/project_detail.html', {
+    context = {
         'project': project,
-        'tasks': tasks,
         'components': components,
+        'tasks': tasks,
         'search_query': search_query,
         'status_filter': status_filter,
+        'assigned_to_filter': assigned_to_filter,
+        'start_date': start_date,
+        'end_date': end_date,
         'sort_by': sort_by,
         'total_tasks': total_tasks,
         'completed_tasks': completed_tasks,
-    })
-
+        'approved_tasks': approved_tasks,
+        'is_technician': is_technician,
+        'is_lead': is_lead,
+    }
+    return render(request, 'tracker/project_detail.html', context)
 
 
 @login_required
@@ -640,7 +676,6 @@ def add_team_member(request, project_id):
     
 # ----------------------- Calendar & Tech Dashboard -----------------------
 
-
 @login_required
 def calendar_view(request):
     user = request.user
@@ -648,11 +683,16 @@ def calendar_view(request):
     day_plus_2 = today + timedelta(days=2)
     day_plus_5 = today + timedelta(days=5)
 
-    # Technicians only see their assigned tasks
-    if user.groups.filter(name='technician').exists():
+    is_technician = user.groups.filter(name__iexact='technician').exists()
+    is_lead = user.is_staff or user.groups.filter(name__in=['lead', 'project_lead']).exists()
+
+    if is_technician and not user.is_superuser and not is_lead:
         tasks = Task.objects.filter(assigned_to=user, due_date__isnull=False)
     else:
         tasks = Task.objects.filter(due_date__isnull=False)
+
+    # Keep it simple since the template does not touch task.project
+    tasks = tasks.only('id', 'title', 'due_date')
 
     reminders = Reminder.objects.filter(user=user)
 
@@ -662,7 +702,38 @@ def calendar_view(request):
         'today': today,
         'day_plus_2': day_plus_2,
         'day_plus_5': day_plus_5,
+        'is_technician': is_technician,
+        'is_lead': is_lead,
     })
+
+@login_required
+def task_detail_api(request, task_id):
+    try:
+        task = Task.objects.select_related('project', 'assigned_to').get(pk=task_id)
+    except Task.DoesNotExist:
+        raise Http404("Task not found")
+
+    user = request.user
+    is_technician = user.groups.filter(name__iexact='technician').exists()
+    is_lead = user.is_staff or user.groups.filter(name__in=['lead', 'project_lead']).exists()
+
+    # Techs can only see their own tasks in detail; leads/staff/superusers can see all
+    if is_technician and not (task.assigned_to_id == user.id or user.is_superuser):
+        return JsonResponse({'error': 'Forbidden'}, status=403)
+
+    data = {
+        'id': task.id,
+        'title': task.title,
+        'description': getattr(task, 'description', '') or '',
+        'due_date': task.due_date.isoformat() if task.due_date else None,
+        'project': getattr(task.project, 'name', None),
+        'assignee': (task.assigned_to.get_full_name() or task.assigned_to.username) if task.assigned_to else None,
+        'status': getattr(task, 'status', '') or '',
+        'priority': getattr(task, 'priority', '') or '',
+        'detail_url': reverse('task_detail', args=[task.id]),
+    }
+    return JsonResponse(data)
+
 
 
 @login_required
@@ -1291,7 +1362,6 @@ def create_project(request):
     return redirect('lead_dashboard')
 
 def alerts_view(request):
-    # Example alerts - ideally fetched from your database model
     alerts = [
         {
             "title": "Pending Task Approval",
