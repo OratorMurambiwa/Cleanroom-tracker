@@ -19,7 +19,7 @@
   </style>
 </head>
 
-<body class="font-inter font-semibold bg-[var(--bg-softest)] text-[var(--text-dark)] min-h-screen flex flex-col">
+<body class="font-inter font-semibold bg-[var(--bg-softest)] text-[var(--text-dark)] h-screen overflow-hidden flex flex-col">
 
   <!-- Top Bar -->
   <header class="bg-[var(--panel-bg)] shadow-md px-6 py-4 flex justify-between items-center h-[72px] border-b border-gray-300 relative">
@@ -44,7 +44,7 @@
   </header>
 
   <!-- Main Layout -->
-  <main class="flex-1 flex overflow-hidden min-h-[calc(100vh-72px)]">
+  <main class="flex-1 flex h-[calc(100vh-72px)]">
     <!-- Sidebar -->
     <aside class="w-1/5 bg-[var(--panel-bg)] border-r border-gray-300 p-6 overflow-y-auto">
       <nav class="flex flex-col gap-4 text-[var(--text-dark)]">
@@ -67,36 +67,55 @@
     </aside>
 
     <!-- Tasks Content -->
-    <section class="flex-1 p-6 overflow-y-auto">
+    <section class="flex-1 p-6 h-full overflow-y-auto">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-xl font-playfair text-[var(--accent-red)]">All Tasks</h2>
         <div class="space-x-2">
           <a href="{% url 'lead_dashboard' %}" class="bg-[var(--accent-red)] text-white px-4 py-2 rounded text-sm hover:bg-red-700">Dashboard</a>
           <a href="{% url 'assign_tasks' %}" class="bg-[var(--accent-red)] text-white px-4 py-2 rounded text-sm hover:bg-red-700">Add Task</a>
-          <a href="{% url 'view_pending_tasks' %}" class="bg-white border border-[var(--accent-red)] text-[var(--accent-red)] px-4 py-2 rounded text-sm hover:bg-[#fdf3f2]">Pending Tasks</a>
         </div>
       </div>
 
-      <form method="get" class="mb-6 grid grid-cols-1 md:grid-cols-5 gap-4">
-        <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Search title or technician" class="px-4 py-2 border border-gray-300 rounded">
-        <input type="date" name="start" value="{{ request.GET.start }}" class="px-4 py-2 border border-gray-300 rounded">
-        <input type="date" name="end" value="{{ request.GET.end }}" class="px-4 py-2 border border-gray-300 rounded">
-        <button type="submit" class="bg-[var(--accent-red)] text-white px-4 py-2 rounded hover:bg-red-700">Apply</button>
-        <a href="{% url 'all_tasks' %}" class="bg-white text-[var(--accent-red)] px-4 py-2 border border-[var(--accent-red)] rounded hover:bg-[#fdf3f2]">Clear</a>
+      <form method="get" class="flex flex-wrap gap-4 mb-6">
+        <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Search title or technician..." class="flex-1 border rounded px-3 py-2 text-sm" />
+        
+        <input type="date" name="start" value="{{ request.GET.start }}" class="border rounded px-3 py-2 text-sm" />
+        <input type="date" name="end" value="{{ request.GET.end }}" class="border rounded px-3 py-2 text-sm" />
+        
+        <select name="status" class="border rounded px-3 py-2 text-sm">
+          <option value="">All Statuses</option>
+          <option value="todo" {% if request.GET.status == 'todo' %}selected{% endif %}>To Do</option>
+          <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>Completed</option>
+          <option value="approved" {% if request.GET.status == 'approved' %}selected{% endif %}>Approved</option>
+        </select>
+
+        <button type="submit" class="bg-[var(--accent-red)] text-white px-4 py-2 rounded text-sm hover:bg-red-700">Apply</button>
+        <a href="{% url 'all_tasks' %}" class="bg-white text-[var(--accent-red)] px-4 py-2 border border-[var(--accent-red)] rounded text-sm hover:bg-[#fdf3f2]">Clear</a>
       </form>
 
       <div class="space-y-4">
         {% for task in tasks %}
-          <div class="bg-white border border-[#e7c2c4] rounded-xl p-4 shadow">
-            <div class="flex justify-between items-center">
-              <div>
-                <h3 class="text-lg font-semibold text-[var(--accent-red)]">{{ task.title }}</h3>
-                <p class="text-sm text-gray-700">Due: {{ task.due_date }}</p>
-                <p class="text-sm text-gray-600">Assigned to: {{ task.assigned_to.get_full_name }}</p>
-              </div>
-              <a href="{% url 'task_detail' task.id %}" class="text-sm text-blue-700 hover:underline">View</a>
-            </div>
-          </div>
+          <a href="{% url 'review_task_for_approval' task.id %}" class="block bg-white border border-[#e7c2c4] rounded-xl p-4 shadow hover:bg-[#fdf3f2] transition">
+            <h3 class="text-lg font-semibold text-[var(--accent-red)]">{{ task.title }}</h3>
+
+            <p class="text-sm mt-1">
+              Status:
+              {% if task.is_approved %}
+                <span class="text-green-600 font-medium">Approved</span>
+              {% elif task.is_completed or task.completed %}
+                <span class="text-yellow-600 font-medium">Completed</span>
+              {% elif task.status|lower == 'in_progress' %}
+                <span class="text-blue-600 font-medium">In Progress</span>
+              {% elif task.status|lower == 'todo' %}
+                <span class="text-gray-600">To Do</span>
+              {% else %}
+                <span class="text-gray-600">Pending</span>
+              {% endif %}
+            </p>
+
+            <p class="text-sm text-gray-700 mt-1">Due: {{ task.due_date }}</p>
+            <p class="text-sm text-gray-600 mt-1">Assigned to: {{ task.assigned_to.get_full_name }}</p>
+          </a>
         {% empty %}
           <p class="text-sm text-gray-500">No tasks found.</p>
         {% endfor %}

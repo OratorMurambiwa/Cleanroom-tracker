@@ -30,7 +30,7 @@ class Project(models.Model):
 # ----------------------- Component -----------------------
 class Component(models.Model):
     name = models.CharField(max_length=100)
-    projects = models.ManyToManyField(Project, related_name='components')  # changed from FK to M2M
+    projects = models.ManyToManyField(Project, related_name='components')  # M2M
     description = models.TextField(blank=True)
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
@@ -53,7 +53,7 @@ class Task(models.Model):
     description = models.TextField(blank=True)
 
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='tasks', null=True, blank=True)
-    components = models.ManyToManyField(Component, related_name='tasks', blank=True)  # now supports multiple components
+    components = models.ManyToManyField(Component, related_name='tasks', blank=True)
 
     assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
 
@@ -81,30 +81,31 @@ class Task(models.Model):
 
 
 # ----------------------- Reminder -----------------------
-
 class Reminder(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     note = models.TextField(blank=True)
-    reminder_time = models.DateTimeField()  # renamed and updated from DateField
+    reminder_time = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.title} - {self.reminder_time}"
 
 
-
 # ----------------------- Document -----------------------
 class Document(models.Model):
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='documents')
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='documents', null=True, blank=True)
+    component = models.ForeignKey(Component, on_delete=models.CASCADE, related_name='documents', null=True, blank=True)
     file = models.FileField(upload_to='documents/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
     description = models.TextField(blank=True)
 
     def __str__(self):
-        return f"Document for {self.project.name} uploaded on {self.uploaded_at}"
+        label = self.project.name if self.project else self.component.name if self.component else "Unlinked"
+        return f"Document ({label}) - {self.uploaded_at.strftime('%Y-%m-%d')}"
 
 
+# ----------------------- Traveler Document -----------------------
 class TravelerDocument(models.Model):
     file = models.FileField(upload_to='traveler_docs/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
@@ -114,11 +115,13 @@ class TravelerDocument(models.Model):
         return f"{self.file.name} - {self.uploaded_at.strftime('%Y-%m-%d')}"
 
 
+# ----------------------- Inventory Upload -----------------------
 class InventoryUpload(models.Model):
     file = models.FileField(upload_to='uploads/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
 
+# ----------------------- Lookup History -----------------------
 class LookupHistory(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     query = models.CharField(max_length=255)
@@ -148,11 +151,9 @@ class Message(models.Model):
         return f"From {self.sender.username} at {self.timestamp}"
 
 
-#-------------Stored Traveler Doc----------------------------------------------
-
+# ----------------------- Stored Traveler File -----------------------
 class StoredTravelerFile(models.Model):
     file = models.FileField(upload_to='temp_uploads/')
     filename = models.CharField(max_length=255)
     uploaded_at = models.DateTimeField(auto_now_add=True)
-    project = models.ForeignKey('Project', null=True, blank=True, on_delete=models.SET_NULL)
-
+    project = models.ForeignKey(Project, null=True, blank=True, on_delete=models.SET_NULL)

@@ -38,7 +38,7 @@ def update_project_progress(project):
         project.save()
 
 def update_component_progress(component):
-    tasks = Task.objects.filter(component=component)
+    tasks = Task.objects.filter(components=component)
     if tasks.exists():
         total = tasks.count()
         approved = tasks.filter(is_approved=True).count()
@@ -143,7 +143,7 @@ def component_detail_view(request, component_id):
 
     # Deduplicate techs from task_set
     assigned_techs = User.objects.filter(
-        id__in=component.task_set.values_list('assigned_to__id', flat=True)
+        id__in = component.tasks.values_list('assigned_to__id', flat=True)
     ).distinct()
 
     if request.method == 'POST':
@@ -184,15 +184,6 @@ def project_list_view(request):
     projects = Project.objects.all()
     return render(request, 'tracker/project_list.html', {'projects': projects})
 
-
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, get_object_or_404
-from django.db.models import Q
-from .models import Project
-
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404, render
-from django.db.models import Q
 
 
 @login_required
@@ -518,8 +509,10 @@ def edit_task_view(request, task_id):
 
     return render(request, 'tracker/edit_task.html', {
         'task': task,
-        'technicians': technicians
+        'technicians': technicians,
+        'components': Component.objects.all()
     })
+
 
 @login_required
 def review_task_for_approval(request, task_id):
@@ -1306,9 +1299,12 @@ def settings_view(request):
     return render(request, 'tracker/settings.html')
 
 
+@login_required
 def all_tasks_view(request):
     tasks = Task.objects.all()
+
     query = request.GET.get('q', '')
+    status = request.GET.get('status')
     start_date = request.GET.get('start')
     end_date = request.GET.get('end')
 
@@ -1316,8 +1312,17 @@ def all_tasks_view(request):
         tasks = tasks.filter(
             Q(title__icontains=query) |
             Q(assigned_to__first_name__icontains=query) |
-            Q(assigned_to__last_name__icontains=query)
+            Q(assigned_to__last_name__icontains=query) |
+            Q(assigned_to__username__icontains=query)
         )
+
+    if status:
+        if status == 'approved':
+            tasks = tasks.filter(is_approved=True)
+        elif status == 'completed':
+            tasks = tasks.filter(completed=True, is_approved=False)
+        elif status == 'todo':
+            tasks = tasks.filter(completed=False, is_approved=False)
 
     if start_date:
         tasks = tasks.filter(due_date__gte=start_date)
@@ -1328,6 +1333,7 @@ def all_tasks_view(request):
     return render(request, 'tracker/alltasks.html', {
         'tasks': tasks,
     })
+
 
 
 @login_required
