@@ -1,7 +1,120 @@
-Django>=4.2,<5.0
-channels>=4.0
-pandas>=1.5
-openpyxl>=3.1
-PyMuPDF>=1.22.3
-Pillow>=9.0.0
-cryptography>=3.4.8
+# Cleanroom Tracker - Requirements
+# Django-based project management system for cleanroom operations
+
+# =============================================================================
+# CORE FRAMEWORK
+# =============================================================================
+Django>=5.2.4,<5.3.0
+django-crispy-forms>=2.1
+crispy-bootstrap5>=0.7
+
+# =============================================================================
+# ASGI & WEBSOCKET SUPPORT
+# =============================================================================
+channels>=4.0.0,<5.0.0
+channels-redis>=4.1.0,<5.0.0
+daphne>=4.0.0,<5.0.0
+
+# =============================================================================
+# DATABASE & CACHE
+# =============================================================================
+redis>=5.0.0,<6.0.0
+psycopg2-binary>=2.9.0  # PostgreSQL support (optional, for production)
+mysqlclient>=2.2.0      # MySQL support (optional, for production)
+
+# =============================================================================
+# FILE PROCESSING & EXCEL SUPPORT
+# =============================================================================
+pandas>=2.0.0,<3.0.0
+openpyxl>=3.1.0,<4.0.0
+xlrd>=2.0.0,<3.0.0     # For older Excel formats
+Pillow>=10.0.0,<11.0.0 # Image processing
+
+# =============================================================================
+# WEB FRONTEND & UI
+# =============================================================================
+django-tailwind>=3.8.0
+django-compressor>=4.4
+django-livereload-server>=0.3.2
+
+# =============================================================================
+# AUTHENTICATION & SECURITY
+# =============================================================================
+django-allauth>=0.57.0
+django-cors-headers>=4.3.0
+django-ratelimit>=4.1.0
+
+# =============================================================================
+# API & SERIALIZATION
+# =============================================================================
+djangorestframework>=3.14.0
+django-filter>=23.0
+markdown>=3.5.0
+
+# =============================================================================
+# DEVELOPMENT & DEBUGGING
+# =============================================================================
+django-debug-toolbar>=4.2.0
+django-extensions>=3.2.0
+ipython>=8.0.0
+python-dotenv>=1.0.0
+
+# =============================================================================
+# TESTING
+# =============================================================================
+pytest>=7.4.0
+pytest-django>=4.7.0
+factory-boy>=3.3.0
+coverage>=7.3.0
+
+# =============================================================================
+# PRODUCTION & DEPLOYMENT
+# =============================================================================
+gunicorn>=21.2.0
+whitenoise>=6.6.0
+django-storages>=1.14.0
+boto3>=1.34.0          # AWS S3 support (optional)
+
+# =============================================================================
+# UTILITIES
+# =============================================================================
+python-dateutil>=2.8.0
+pytz>=2023.3
+requests>=2.31.0
+urllib3>=2.0.0
+
+# =============================================================================
+# SYSTEM & OS
+# =============================================================================
+setuptools>=68.0.0
+wheel>=0.41.0
+pip>=23.0.0
+
+# =============================================================================
+# VERSION NOTES
+# =============================================================================
+# Python: 3.8+ (recommended: 3.11+)
+# Database: SQLite (dev), PostgreSQL/MySQL (production)
+# Cache: Redis (required for WebSocket support)
+# Web Server: Daphne (ASGI) + Gunicorn (production)
+
+# =============================================================================
+# INSTALLATION COMMANDS
+# =============================================================================
+# 1. Create virtual environment: python -m venv .venv
+# 2. Activate: .venv\Scripts\activate (Windows) or source .venv/bin/activate (Unix)
+# 3. Install: pip install -r requirements.txt
+# 4. Install Redis server for WebSocket support
+# 5. Run migrations: python manage.py migrate
+# 6. Start server: python manage.py runserver
+
+# =============================================================================
+# PRODUCTION CONSIDERATIONS
+# =============================================================================
+# - Use PostgreSQL or MySQL instead of SQLite
+# - Configure Redis for production
+# - Set DEBUG=False and configure SECRET_KEY
+# - Use environment variables for sensitive settings
+# - Configure proper ALLOWED_HOSTS
+# - Set up static file serving (nginx/Apache)
+# - Use HTTPS in production
