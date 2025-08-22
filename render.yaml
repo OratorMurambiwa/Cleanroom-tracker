@@ -46,7 +46,7 @@ services:
     ipAllowList: []
 
   # PostgreSQL Database
-  - type: pgres
+  - type: postgres
     name: cleanroom-tracker-db
     plan: starter
     ipAllowList: []
