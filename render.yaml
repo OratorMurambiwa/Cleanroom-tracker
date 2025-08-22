@@ -30,24 +30,15 @@ services:
           type: redis
           name: cleanroom-tracker-redis
           property: connectionString
-      - key: WEB_CONCURRENCY
-        value: 4
-      - key: PORT
-        value: 8000
     healthCheckPath: /admin/
     autoDeploy: true
-    numInstances: 1
 
   # Redis Service for WebSockets
   - type: redis
     name: cleanroom-tracker-redis
     plan: starter
-    maxmemoryPolicy: allkeys-lru
-    ipAllowList: []
 
   # PostgreSQL Database
-  - type: postgres
+  - type: pgres
     name: cleanroom-tracker-db
     plan: starter
-    ipAllowList: []
-    maxConnections: 20
