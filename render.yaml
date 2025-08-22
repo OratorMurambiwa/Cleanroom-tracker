@@ -6,14 +6,15 @@ services:
     plan: starter
     buildCommand: |
       pip install -r requirements.txt
+      pip install dj-database-url psycopg2-binary whitenoise
       python manage.py collectstatic --noinput
       python manage.py migrate
-    startCommand: gunicorn backend.wsgi:application
+    startCommand: gunicorn backend.wsgi:application --bind 0.0.0.0:$PORT --workers 4 --timeout 120
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
       - key: DJANGO_SETTINGS_MODULE
-        value: backend.settings
+        value: backend.settings_production
       - key: SECRET_KEY
         generateValue: true
       - key: DEBUG
@@ -31,16 +32,18 @@ services:
           property: connectionString
       - key: WEB_CONCURRENCY
         value: 4
-      - key: DJANGO_SETTINGS_MODULE
-        value: backend.settings
+      - key: PORT
+        value: 8000
     healthCheckPath: /admin/
     autoDeploy: true
+    numInstances: 1
 
   # Redis Service for WebSockets
   - type: redis
     name: cleanroom-tracker-redis
     plan: starter
     maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
 
   # PostgreSQL Database
   - type: pgres
