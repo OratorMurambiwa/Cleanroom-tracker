@@ -8,26 +8,31 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --accent-red: #a51c30;
+      --bg-softest: #f8f6f3;
+      --panel-bg: #f6f3f0;
+      --text-dark: #1A1A1A;
+    }
     .font-playfair { font-family: 'Playfair Display', serif; }
     .font-inter { font-family: 'Inter', sans-serif; }
-    @keyframes fade-in {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .animate-fade-in { animation: fade-in 0.6s ease-out; }
   </style>
 </head>
-<body class="h-screen font-inter font-semibold flex flex-col bg-gradient-to-br from-[#f4e7e5] to-[#f0d9d6] text-gray-800 overflow-hidden">
+<body class="font-inter font-semibold bg-[var(--bg-softest)] text-[var(--text-dark)] min-h-screen flex flex-col">
+
   <!-- Top Bar -->
-  <header class="bg-[#fcfbfa] shadow-md px-6 py-4 flex justify-between items-center h-[72px] border-b border-gray-300">
+  <header class="bg-[var(--panel-bg)] shadow-md px-6 py-4 flex justify-between items-center h-[72px] border-b border-gray-300 relative">
     <h1 class="text-2xl font-playfair text-[#a51c30]">Project Details</h1>
-    <div class="flex items-center gap-6">
+    <div class="flex items-center gap-6 relative">
+      <!-- Calendar icon link -->
       <a href="{% url 'calendar' %}" class="hover:text-[#a51c30] transition hover:scale-110">
         <i data-lucide="calendar" class="w-6 h-6"></i>
       </a>
-      <a href="settings.html" class="hover:text-[#a51c30] transition hover:scale-110">
+      <a href="{% url 'settings' %}" class="hover:text-[#a51c30] transition hover:scale-110">
         <i data-lucide="settings" class="w-6 h-6"></i>
       </a>
+
+      <!-- Profile Dropdown with Logout -->
       <div class="relative">
         <button id="profileBtn" class="hover:text-[#a51c30] transition hover:scale-110 focus:outline-none">
           <i data-lucide="user-circle" class="w-6 h-6"></i>
@@ -40,123 +45,234 @@
     </div>
   </header>
 
-  <!-- Main Section -->
-  <main class="flex flex-1 min-h-0 overflow-hidden">
+  <!-- Main Layout -->
+  <main class="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-[calc(100vh-72px)]">
     <!-- Sidebar -->
-    <aside class="hidden md:block w-1/5 bg-[#faf9f9] border-r border-gray-300 p-6 overflow-y-auto">
-      <nav class="flex flex-col gap-4">
-        <a href="{% url 'project_list' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all"><span>📁</span><span>Projects</span></a>
-        <a href="{% url 'assign_tasks' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all"><span>🗘️</span><span>Tasks</span></a>
-        <a href="{% url 'components' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all"><span>🔧</span><span>Components</span></a>
-        <a href="messages.html" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all"><span>💬</span><span>Messages</span></a>
-        <a href="alerts.html" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all"><span>🚨</span><span>Alerts</span></a>
+    <aside class="w-full lg:w-1/5 bg-[var(--panel-bg)] border-r border-gray-300 p-6 overflow-y-auto">
+      <nav class="flex flex-col gap-4 text-[var(--text-dark)]">
+        <a href="{% url 'tech_project_list' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all">
+          <i data-lucide="folder" class="w-5 h-5"></i> <span>Projects</span>
+        </a>
+        <a href="{% url 'tech_tasks' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all">
+          <i data-lucide="list-todo" class="w-5 h-5"></i> <span>My Tasks</span>
+        </a>
+        <a href="{% url 'tech_components' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all">
+          <i data-lucide="package" class="w-5 h-5"></i> <span>Components</span>
+        </a>
+        <a href="{% url 'project_messages' project.id %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all">
+          <i data-lucide="messages-square" class="w-5 h-5"></i> <span>Messages</span>
+        </a>
+        <a href="{% url 'alerts' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all">
+          <i data-lucide="bell" class="w-5 h-5"></i> <span>Alerts</span>
+        </a>
       </nav>
     </aside>
 
-    <!-- Scrollable Content Area -->
-    <section class="flex-1 overflow-y-auto p-6 animate-fade-in">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="md:col-span-2 flex flex-col gap-4">
-          <div class="bg-white rounded-xl shadow border border-[#e7c2c4] p-4">
-            <div class="flex justify-between items-center mb-2">
-              <h2 class="text-md font-bold text-[#a51c30]">Task List</h2>
+    <!-- Main Content -->
+    <div class="flex-1 h-[calc(100vh-72px)] grid grid-cols-1 md:grid-cols-3 gap-6 p-6 overflow-hidden">
+      <!-- LEFT COLUMN -->
+      <div class="md:col-span-2 flex flex-col gap-6 overflow-hidden">
+        <!-- Task List -->
+        <div class="bg-white p-6 rounded-xl shadow flex-1 min-h-0 overflow-y-auto">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-semibold text-[#a51c30]">Task List</h3>
+          </div>
+
+          <!-- Filter Form -->
+          <form method="get" class="flex flex-wrap gap-4 mb-4">
+            <input type="text" name="search" placeholder="Search tasks, descriptions, or assignees..." value="{{ search_query }}" class="flex-1 border rounded px-3 py-2 text-sm" />
+            <select name="status" class="border rounded px-3 py-2 text-sm">
+              <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Status</option>
+              <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+              <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+              <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved</option>
+            </select>
+            <select name="deadline" class="border rounded px-3 py-2 text-sm">
+              <option value="" {% if deadline_filter == '' %}selected{% endif %}>All Deadlines</option>
+              <option value="overdue" {% if deadline_filter == 'overdue' %}selected{% endif %}>Overdue</option>
+              <option value="today" {% if deadline_filter == 'today' %}selected{% endif %}>Due Today</option>
+              <option value="week" {% if deadline_filter == 'week' %}selected{% endif %}>Due This Week</option>
+            </select>
+            <input type="date" name="start_date" placeholder="Start Date" value="{{ start_date }}" class="border rounded px-3 py-2 text-sm" />
+            <input type="date" name="end_date" placeholder="End Date" value="{{ end_date }}" class="border rounded px-3 py-2 text-sm" />
+            <div class="flex gap-2">
+              <button type="submit" class="bg-[#a51c30] text-white px-4 py-2 rounded text-sm hover:bg-[#911924] transition">Filter</button>
+              <a href="?clear=1" class="bg-gray-500 text-white px-4 py-2 rounded text-sm hover:bg-gray-600 transition">Clear</a>
             </div>
+          </form>
 
-            <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
-              <input type="text" name="search" placeholder="Search tasks..." value="{{ search_query }}" class="text-sm px-2 py-1 border border-[#e7c2c4] rounded-md focus:outline-none focus:ring-2 focus:ring-[#a51c30]" />
-              <select name="status" class="border border-[#e7c2c4] rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#a51c30]">
-                <option value="all" {% if status_filter == 'all' %}selected{% endif %}>Status: All</option>
-                <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
-                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
-              </select>
-              <select name="sort" class="border border-[#e7c2c4] rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#a51c30]">
-                <option value="" {% if not sort_by %}selected{% endif %}>Sort by</option>
-                <option value="due" {% if sort_by == 'due' %}selected{% endif %}>Due Date</option>
-                <option value="priority" {% if sort_by == 'priority' %}selected{% endif %}>Priority</option>
-              </select>
-              <button type="submit" class="bg-[#a51c30] text-white px-4 py-1.5 rounded hover:bg-red-700 transition md:col-span-3">Apply Filters</button>
-            </form>
-
-            <h2 class="text-xl font-bold text-[#a51c30] mb-2">{{ project.name }}</h2>
-            <p class="text-sm text-gray-600 mb-4">{{ project.description }}</p>
-
-            <div class="w-full bg-gray-200 h-4 rounded-full overflow-hidden mb-4">
-              <div class="bg-green-600 h-4 text-white text-xs text-center" style="width: {{ project.progress }}%;">
-                {{ project.progress|floatformat:0 }}%
-              </div>
-            </div>
-
-            {% if total_tasks > 0 %}
-              <div class="mb-2 text-sm text-gray-700 font-semibold">
-                {{ completed_tasks }} / {{ total_tasks }} tasks completed
-              </div>
-            {% else %}
-              <div class="mb-2 text-sm text-gray-500 italic">
-                No tasks assigned yet.
-              </div>
-            {% endif %}
-
-            <ul class="space-y-2">
+          <!-- Task List -->
+          {% if tasks %}
+            <ul class="space-y-3">
               {% for task in tasks %}
-                <li class="flex justify-between items-center bg-[#fdfdfd] border border-[#e7c2c4] rounded p-2">
-                  <a href="{% url 'project_task_detail' task.id %}" class="text-sm truncate text-[#a51c30] hover:underline">
-                    {{ task.title }}
-                  </a>
-                  <div class="flex gap-2 items-center">
-                    {% if task.is_completed %}✅{% else %}⏳{% endif %}
-                    {% if task.is_approved %}
-                      <span class="text-xs text-green-600 font-semibold">Approved</span>
-                    {% elif task.is_completed %}
-                      <form method="POST" action="{% url 'approve_task' task.id %}">
-                        {% csrf_token %}
-                        <button class="text-xs text-white bg-green-600 px-2 py-1 rounded">Approve</button>
-                      </form>
+                <li class="border p-4 rounded-lg hover:bg-[#fdf3f2] transition">
+                  <div class="block">
+                    <div class="flex justify-between items-start mb-2">
+                      <a href="{% url 'project_task_detail' task.id %}" class="font-semibold text-[#a51c30] hover:text-[#911924] hover:underline transition">
+                        {{ task.title }}
+                      </a>
+                      <div class="flex gap-2">
+                        {% if task.completed and not task.is_approved %}
+                          <span class="text-yellow-600 font-medium text-xs">Pending Approval</span>
+                        {% elif task.is_approved %}
+                          <span class="text-green-600 font-medium text-xs">Approved</span>
+                        {% else %}
+                          <span class="text-gray-600 text-xs">To Do</span>
+                        {% endif %}
+                      </div>
+                    </div>
+                    
+                    {% if task.description %}
+                      <p class="text-sm text-gray-600 mb-2">{{ task.description }}</p>
                     {% endif %}
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <!-- Left Column -->
+                      <div class="space-y-1">
+                        <p class="text-xs text-gray-500">
+                          Assigned to: 
+                          <span class="text-black font-medium">{{ task.assigned_to.username }}</span>
+                        </p>
+
+                        {% if task.components.exists %}
+                          <p class="text-xs text-gray-500">
+                            Components: 
+                            <span class="text-black font-medium">
+                              {% for component in task.components.all %}
+                                {{ component.name }}{% if not forloop.last %}, {% endif %}
+                              {% endfor %}
+                            </span>
+                          </p>
+                        {% endif %}
+                      </div>
+
+                      <!-- Right Column -->
+                      <div class="space-y-1">
+                        {% if task.due_date %}
+                          <p class="text-xs text-gray-500">
+                            Deadline: 
+                            <span class="{% if task.due_date < today %}text-red-600 font-medium{% elif task.due_date == today %}text-orange-600 font-medium{% else %}text-black font-medium{% endif %}">
+                              {{ task.due_date|date:"M d, Y" }}
+                              {% if task.due_date < today and not task.completed %}
+                                (Overdue)
+                              {% elif task.due_date == today %}
+                                (Today)
+                              {% endif %}
+                            </span>
+                          </p>
+                        {% endif %}
+
+                        {% if task.notes %}
+                          <p class="text-xs text-gray-500">
+                            Notes: <span class="text-black font-medium">{{ task.notes|truncatechars:50 }}</span>
+                          </p>
+                        {% endif %}
+
+                        {% if task.priority %}
+                          <p class="text-xs text-gray-500">
+                            Priority: <span class="text-black font-medium">{{ task.priority }}</span>
+                          </p>
+                        {% endif %}
+                      </div>
+                    </div>
+
+                    <!-- Task Actions -->
+                    <div class="flex justify-between items-center mt-3 pt-2 border-t border-gray-200">
+                      <div class="text-xs text-gray-500">
+                        Created: {{ task.created_at|date:"M d, Y" }}
+                        {% if task.updated_at != task.created_at %}
+                          • Updated: {{ task.updated_at|date:"M d, Y" }}
+                        {% endif %}
+                      </div>
+                      
+                      <div class="flex gap-2">
+                        {% if user.is_staff and task.completed and not task.is_approved %}
+                          <form method="post" action="{% url 'approve_task' task.id %}" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" class="bg-green-600 text-white px-3 py-1 text-sm rounded hover:bg-green-700 transition">Approve</button>
+                          </form>
+                        {% endif %}
+                        
+                        {% if not task.is_approved %}
+                          <a href="{% url 'project_task_detail' task.id %}" class="bg-[#a51c30] text-white px-3 py-1 text-sm rounded hover:bg-[#911924] transition">
+                            {% if task.completed %}Edit{% else %}Complete{% endif %}
+                          </a>
+                        {% endif %}
+                      </div>
+                    </div>
                   </div>
                 </li>
-              {% empty %}
-                <li class="text-sm text-gray-500">No tasks found.</li>
               {% endfor %}
             </ul>
-          </div>
-
-          <div class="bg-white rounded-xl shadow border border-[#e7c2c4] p-4">
-            <h2 class="text-md font-bold text-[#a51c30] mb-2">Messages</h2>
-            <div class="flex gap-2 mb-3">
-              <input type="text" placeholder="Search messages..." class="flex-1 text-sm px-2 py-1 border border-[#e7c2c4] rounded-md focus:outline-none focus:ring-2 focus:ring-[#a51c30]">
-              <select class="border border-[#e7c2c4] rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#a51c30]">
-                <option>All</option>
-                <option>LCLS-II-HE</option>
-                <option>Unread</option>
-                <option>Mentions</option>
-                <option>Read</option>
-              </select>
+          {% else %}
+            <div class="text-center py-8 text-gray-500">
+              <p>No tasks found matching your criteria.</p>
+              <a href="?clear=1" class="text-[#a51c30] hover:underline mt-2 inline-block">Clear filters</a>
             </div>
-            <div class="bg-[#fafafa] p-2 rounded border border-gray-300 text-sm text-gray-500 text-center">No messages yet</div>
-          </div>
+          {% endif %}
         </div>
+      </div>
 
-        <!-- Sidebar Panels -->
-        <div class="flex flex-col gap-4">
-          <div class="bg-white rounded-xl shadow border border-[#e7c2c4] p-4">
-            <h2 class="text-md font-bold text-[#a51c30] mb-2">Project Documents</h2>
-            <ul class="list-disc pl-5 space-y-1 text-sm">
-              <li><a href="#" class="text-[#a51c30] hover:underline">Traveller</a></li>
-              <li><a href="#" class="text-[#a51c30] hover:underline">Cleanroom Policy</a></li>
-            </ul>
+      <!-- RIGHT COLUMN -->
+      <div class="flex flex-col gap-4 h-full overflow-y-auto">
+        <!-- Project Documents -->
+        <div class="bg-white p-4 rounded-xl shadow flex-1 flex flex-col min-h-0">
+          <div class="flex justify-between items-center mb-3 shrink-0">
+            <h3 class="text-lg font-semibold text-[#a51c30]">Project Documents</h3>
           </div>
-
-          <div class="bg-white rounded-xl shadow border border-[#e7c2c4] p-4">
-            <h2 class="text-md font-bold text-[#a51c30] flex items-center gap-2">🤖 Ask Lei</h2>
-            <p class="text-sm text-gray-700 mt-2">Ask about this project</p>
-            <div class="flex gap-2 mt-3">
-              <input type="text" class="flex-1 border border-gray-300 rounded-full px-3 py-1 text-sm focus:ring-2 focus:ring-[#a51c30] focus:outline-none transition" placeholder="Enter text here..." />
-              <button class="bg-[#a51c30] text-white px-4 py-1.5 text-sm rounded-full hover:bg-red-700 transition">&rarr;</button>
-            </div>
+          <div class="overflow-y-auto flex-1 pr-1">
+            {% if project_documents or traveler_documents or stored_files %}
+              <ul class="space-y-2 text-sm">
+                <!-- Project Documents -->
+                {% if project_documents %}
+                  <li class="mb-2">
+                    <h4 class="text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">Project Documents</h4>
+                    {% for doc in project_documents %}
+                      <div class="flex justify-between border-b pb-1 mb-1">
+                        <a href="{{ doc.file.url }}" target="_blank" class="underline text-blue-600 hover:text-blue-800 transition-colors">{{ doc.file.name|truncatechars:30 }}</a>
+                        <span class="text-xs text-gray-500">{{ doc.uploaded_at|date:"M d" }}</span>
+                      </div>
+                    {% endfor %}
+                  </li>
+                {% endif %}
+                
+                <!-- Traveler Documents -->
+                {% if traveler_documents %}
+                  <li class="mb-2">
+                    <h4 class="text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">Traveler Documents</h4>
+                    {% for doc in traveler_documents %}
+                      <div class="flex justify-between border-b pb-1 mb-1">
+                        <a href="{{ doc.file.url }}" target="_blank" class="underline text-green-600 hover:text-green-800 transition-colors">{{ doc.file.name|truncatechars:30 }}</a>
+                        <span class="text-xs text-gray-500">{{ doc.uploaded_at|date:"M d" }}</span>
+                      </div>
+                    {% endfor %}
+                  </li>
+                {% endif %}
+                
+                <!-- Stored Files -->
+                {% if stored_files %}
+                  <li class="mb-2">
+                    <h4 class="text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">Uploaded Files</h4>
+                    {% for file in stored_files %}
+                      <div class="flex justify-between border-b pb-1 mb-1">
+                        <a href="{{ file.file.url }}" target="_blank" class="underline text-purple-600 hover:text-purple-800 transition-colors">{{ file.filename|truncatechars:30 }}</a>
+                        <span class="text-xs text-gray-500">{{ file.uploaded_at|date:"M d" }}</span>
+                      </div>
+                    {% endfor %}
+                  </li>
+                {% endif %}
+              </ul>
+            {% else %}
+              <div class="text-center py-8">
+                <i data-lucide="file-text" class="w-12 h-12 text-gray-300 mx-auto mb-2"></i>
+                <p class="text-sm text-gray-500">No documents uploaded yet</p>
+                <p class="text-xs text-gray-400 mt-1">Documents will appear here when uploaded</p>
+              </div>
+            {% endif %}
           </div>
         </div>
       </div>
-    </section>
+    </div>
   </main>
 
   <script>

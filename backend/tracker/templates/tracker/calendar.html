@@ -120,6 +120,21 @@
       </div>
     </div>
   </div>
+  <!-- Reminder Details Modal -->
+  <div id="reminderModal" class="fixed inset-0 bg-black/50 hidden justify-center items-center z-50">
+    <div class="bg-white w-full max-w-md rounded-lg shadow-lg p-6 relative">
+      <button id="remCloseBtn" class="absolute top-3 right-3 text-gray-500 hover:text-red-600 text-2xl font-bold" aria-label="Close dialog">&times;</button>
+      <h2 class="text-xl font-bold text-[var(--accent-red)] mb-2" id="remTitle">Reminder</h2>
+      <div class="text-sm mb-4">
+        <div class="font-semibold">When</div>
+        <div id="remTime" class="text-gray-700">—</div>
+      </div>
+      <div class="mt-4 flex justify-end gap-2">
+        <a id="remDeleteLink" href="#" class="inline-block bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition">Delete</a>
+        <button id="remCloseBtn2" class="inline-block bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300 transition">Close</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Scripts -->
   <script>
@@ -129,15 +144,16 @@
       // Role flag into JS (true for leads/staff/superusers you marked as leads)
       const IS_LEAD = {{ is_lead|yesno:"true,false" }};
 
-      // Build base URLs by reversing with a dummy id=0, then swap with real id
-      // (kept same approach — just slightly safer replacement)
-      const reviewBase  = "{% url 'review_task_for_approval' 0 %}"; // e.g. /tasks/0/review/
-      const approveBase = "{% url 'approve_task' 0 %}";             // e.g. /tasks/0/approve/
-      function toUrl(base, id) {
-        // only replace if id looks valid and >= 1
+      // Build review URL client-side to avoid misrouting
+      function reviewUrlFor(id) {
         const num = parseInt(id, 10);
-        if (!Number.isFinite(num) || num < 1) return base; // don't create /0/ links
-        return base.replace(/\/0\/?$/, `/${num}/`);
+        if (!Number.isFinite(num) || num < 1) return null;
+        return `/tasks/${num}/review/`;
+      }
+      function deleteReminderUrlFor(id) {
+        const num = parseInt(id, 10);
+        if (!Number.isFinite(num) || num < 1) return null;
+        return `/delete_reminder/${num}/`;
       }
 
       const calendar = new FullCalendar.Calendar(calendarEl, {
@@ -153,6 +169,17 @@
 
           // Fill the popup with details (unchanged)
           const p = info.event.extendedProps || {};
+          // Show Reminder modal if reminder
+          if (p.reminderId) {
+            document.getElementById('remTitle').textContent = info.event.title || 'Reminder';
+            document.getElementById('remTime').textContent = info.event.start ? info.event.start.toLocaleString() : '—';
+            const link = document.getElementById('remDeleteLink');
+            link.href = deleteReminderUrlFor(p.reminderId) || '#';
+            const rModal = document.getElementById('reminderModal');
+            rModal.classList.remove('hidden');
+            rModal.classList.add('modal-show');
+            return;
+          }
           document.getElementById('taskTitle').textContent = info.event.title || 'Task';
           document.getElementById('taskProject').textContent = p.project || '—';
           document.getElementById('taskAssignee').textContent = p.assignee || '—';
@@ -165,13 +192,8 @@
           const taskId = info.event.id || p.taskId;
           const openBtn = document.getElementById('taskOpenBtn');
 
-          const nextHref = IS_LEAD ? toUrl(reviewBase, taskId) : toUrl(approveBase, taskId);
-          // If replacement didn't succeed because id wasn't valid, fall back to detailUrl
-          if (nextHref === reviewBase || nextHref === approveBase) {
-            openBtn.href = p.detailUrl || info.event.url || '#';
-          } else {
-            openBtn.href = nextHref;
-          }
+          const nextHref = reviewUrlFor(taskId);
+          openBtn.href = nextHref || p.detailUrl || info.event.url || '#';
 
           // Show the modal
           const tModal = document.getElementById('taskModal');
@@ -200,7 +222,8 @@
             {
               title: "🔔 {{ reminder.title|escapejs }}",
               start: "{{ reminder.reminder_time|date:'Y-m-d\\TH:i:s' }}",
-              color: "blue"
+              color: "blue",
+              extendedProps: { reminderId: "{{ reminder.id }}" }
             },
           {% endfor %}
         ]
@@ -252,6 +275,17 @@
           closeTaskModal();
         }
       });
+      // Reminder modal close
+      const rModal = document.getElementById('reminderModal');
+      const rClose = document.getElementById('remCloseBtn');
+      const rClose2 = document.getElementById('remCloseBtn2');
+      function closeReminderModal() {
+        rModal.classList.add('hidden');
+        rModal.classList.remove('modal-show');
+      }
+      rClose.addEventListener('click', closeReminderModal);
+      rClose2.addEventListener('click', closeReminderModal);
+      rModal.addEventListener('click', (e) => { if (e.target === rModal) closeReminderModal(); });
     });
   </script>
 </body>

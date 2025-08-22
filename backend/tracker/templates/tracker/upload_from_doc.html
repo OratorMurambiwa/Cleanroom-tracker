@@ -24,11 +24,20 @@
 
     {% if stored_file %}
       <div class="mb-4 bg-[#fdf3f2] border border-[#e7c2c4] rounded p-3 text-sm text-gray-700">
-        <p>
-          <span class="font-semibold text-[#a51c30]">Using saved file:</span>
-          {{ stored_file.filename }}
-        </p>
-        <p class="text-xs text-gray-600">You can re-upload a new file to replace it.</p>
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <p>
+              <span class="font-semibold text-[#a51c30]">Saved file:</span>
+              {{ stored_file.filename }}
+            </p>
+            <p class="text-xs text-gray-600">Uploaded on {{ stored_file.uploaded_at|date:"M d, Y H:i" }}</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <a href="{{ stored_file.file.url }}" target="_blank" class="inline-block bg-[#a51c30] text-white text-xs px-3 py-1.5 rounded hover:bg-[#8a1627]">View</a>
+            <a href="{{ stored_file.file.url }}" download class="inline-block bg-[#5b4d40] text-white text-xs px-3 py-1.5 rounded hover:bg-[#3e2f27]">Download</a>
+          </div>
+        </div>
+        <p class="text-xs text-gray-600 mt-2">You can re-upload a new file to replace it.</p>
       </div>
     {% endif %}
 

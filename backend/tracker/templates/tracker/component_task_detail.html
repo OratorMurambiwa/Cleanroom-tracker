@@ -10,13 +10,14 @@
     body { font-family: 'Inter', sans-serif; }
   </style>
 </head>
+{# removed custom tag; use role redirect URL #}
 <body class="bg-[#fdf5f4] text-gray-800 min-h-screen">
 
   <!-- Top Bar -->
   <header class="bg-white shadow px-6 py-4 flex justify-between items-center">
     <h1 class="text-xl font-bold text-[#a51c30]">Component Task Detail</h1>
     <nav class="space-x-4">
-      <a href="{% url 'tech_dashboard' %}" class="text-sm hover:underline">Dashboard</a>
+      <a href="{% url 'dashboard' %}" class="text-sm hover:underline">Dashboard</a>
       <a href="{% url 'tech_tasks' %}" class="text-sm hover:underline">My Tasks</a>
       <a href="{% url 'components' %}" class="text-sm hover:underline">Components</a>
     </nav>

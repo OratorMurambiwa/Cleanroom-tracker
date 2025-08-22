@@ -4,14 +4,21 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.models import Group, User
 from django.contrib import messages
 from django.db.models import Q
-from datetime import datetime
 from django.http import JsonResponse, Http404
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 import json
 from django.contrib.auth import logout
-import pandas as pd
-import fitz 
+# Optional: pandas is only used for Excel features; import lazily inside the functions that need it
+try:
+    import pandas as pd  # noqa: F401
+except Exception:
+    pd = None
+"""
+Avoid importing heavy/optional libs like PyMuPDF (fitz) at module import time to
+ensure management commands (e.g., migrate) work even if those optional binaries
+are not installed on the host. We'll import them lazily within functions.
+"""
 import re
 import os
 import uuid
@@ -20,7 +27,7 @@ from django.conf import settings
 from django.utils import timezone
 from datetime import datetime, timedelta
 from django.utils.timezone import now
-from .models import Task, Project, Component, Reminder, InventoryUpload, LookupHistory, Message, MessageThread, StoredTravelerFile
+from .models import Task, Project, Component, Reminder, InventoryUpload, LookupHistory, Message, MessageThread, StoredTravelerFile, TravelerDocument
 os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
 from .forms import (
 ProjectForm, ComponentForm, ReminderForm, MessageForm, CustomUserCreationForm,
@@ -116,13 +123,60 @@ def lead_dashboard(request):
 def tech_dashboard(request):
     projects = Project.objects.filter(assigned_users=request.user)
     components = Component.objects.all()
-    reminders = Reminder.objects.filter(user=request.user)
+    
+    # Get reminders from calendar for this user
+    reminders = Reminder.objects.filter(user=request.user).order_by('reminder_time')
+    
+    # Get upcoming tasks in the next 14 days
+    from django.utils import timezone
+    from datetime import timedelta
+    now = timezone.now()
+    upcoming_tasks = Task.objects.filter(
+        assigned_to=request.user,
+        due_date__isnull=False,
+        due_date__gte=now.date(),
+        due_date__lte=now.date() + timedelta(days=14),
+        completed=False
+    ).order_by('due_date')
+    
+    # Get recent messages from projects the user has access to
+    recent_messages = Message.objects.filter(
+        thread__project__in=projects
+    ).select_related('sender', 'thread__project').order_by('-timestamp')[:3]
+    
+    # Add reminder form
+    from .forms import ReminderForm
+    form = ReminderForm()
+    
+    # Handle reminder creation
+    if request.method == 'POST':
+        form = ReminderForm(request.POST)
+        if form.is_valid():
+            reminder_id = request.POST.get('reminder_id')
+            if reminder_id:
+                # Update existing reminder
+                try:
+                    reminder = Reminder.objects.get(id=reminder_id, user=request.user)
+                    reminder.title = form.cleaned_data['title']
+                    reminder.reminder_time = form.cleaned_data['reminder_time']
+                    reminder.note = form.cleaned_data['note']
+                    reminder.save()
+                except Reminder.DoesNotExist:
+                    pass  # Silently ignore if reminder doesn't exist or doesn't belong to user
+            else:
+                # Create new reminder
+                reminder = form.save(commit=False)
+                reminder.user = request.user
+                reminder.save()
+            return redirect('tech_dashboard')
 
     return render(request, 'tracker/tech_dashboard.html', {
         'projects': projects,
         'components': components,
         'reminders': reminders,
-        
+        'upcoming_tasks': upcoming_tasks,
+        'recent_messages': recent_messages,
+        'form': form,
     })
 
 @login_required
@@ -133,48 +187,57 @@ def tech_project_list(request):
 
 @login_required
 def component_detail_view(request, component_id):
+    """Show a single component page.
+
+    I load the component, recalc its progress, list tasks, projects, and
+    members (people on the linked projects). You can also link the component
+    to a new project and upload docs for this component.
+    """
     component = get_object_or_404(Component, id=component_id)
-    
-    # ✅ Update progress before rendering
+
+    # Keep component progress up-to-date
     update_component_progress(component)
 
     active_projects = Project.objects.filter(status='ongoing')
-    technicians = User.objects.filter(groups__name='technician')
 
-    # Deduplicate techs from task_set
+    # Technicians who have tasks on this component
     assigned_techs = User.objects.filter(
-        id__in = component.tasks.values_list('assigned_to__id', flat=True)
+        id__in=component.tasks.values_list('assigned_to__id', flat=True)
     ).distinct()
 
+    # Members from all linked projects (union)
+    project_members = User.objects.filter(
+        id__in=component.projects.values_list('assigned_users__id', flat=True)
+    ).distinct()
+
+    # Handle actions
     if request.method == 'POST':
+        # Link to a project
         if 'project_id' in request.POST:
             project_id = request.POST.get('project_id')
             if project_id:
                 project = get_object_or_404(Project, id=project_id)
-                component.project = project
+                component.projects.add(project)
                 component.save()
                 messages.success(request, f"Linked to project: {project.name}")
                 return redirect('component_detail', component_id=component.id)
 
-        elif 'technician_id' in request.POST:
-            tech_id = request.POST.get('technician_id')
-            if tech_id:
-                tech = get_object_or_404(User, id=tech_id)
-                Task.objects.create(
-                    title=f"Tech Assigned: {tech.get_full_name()}",
-                    description="Auto-assigned via component page",
-                    component=component,
-                    assigned_to=tech,
-                    status='todo'
-                )
-                messages.success(request, f"{tech.get_full_name()} assigned.")
+        # Upload a document for this component
+        if 'file' in request.FILES:
+            form = DocumentForm(request.POST, request.FILES)
+            if form.is_valid():
+                doc = form.save(commit=False)
+                doc.component = component
+                doc.save()
+                messages.success(request, "Document uploaded.")
                 return redirect('component_detail', component_id=component.id)
 
     return render(request, 'tracker/component_detail.html', {
         'component': component,
         'active_projects': active_projects,
-        'technicians': technicians,
         'assigned_techs': assigned_techs,
+        'project_members': project_members,
+        'document_form': DocumentForm(),
     })
 
 # ----------------------- Project Views -----------------------
@@ -259,16 +322,51 @@ def project_detail_view(request, project_id):
 
 @login_required
 def create_project_view(request):
+    """Simple create form for a project (name + description)."""
     form = ProjectForm(request.POST or None)
+    technicians = User.objects.filter(groups__name='technician').exclude(is_superuser=True).exclude(username__iexact='admin')
     if request.method == 'POST' and form.is_valid():
-        form.save()
+        project = form.save()
+
+        # Link selected component (optional)
+        link_component_id = request.POST.get('link_component_id')
+        linked_component = None
+        if link_component_id:
+            linked_component = Component.objects.filter(id=link_component_id).first()
+            if linked_component:
+                linked_component.projects.add(project)
+
+        # Assign members (optional)
+        assign_ids = request.POST.getlist('assign_user_ids')
+        if assign_ids:
+            users_to_add = User.objects.filter(id__in=assign_ids).exclude(is_superuser=True).exclude(username__iexact='admin')
+            for u in users_to_add:
+                project.assigned_users.add(u)
+
+        # Optional document upload
+        if 'file' in request.FILES:
+            doc_form = DocumentForm(request.POST, request.FILES)
+            if doc_form.is_valid():
+                doc = doc_form.save(commit=False)
+                doc.project = project
+                if linked_component:
+                    doc.component = linked_component
+                doc.save()
+
+        messages.success(request, "Project created successfully.")
         return redirect('lead_dashboard')
-    return render(request, 'tracker/create_project.html', {'form': form})
+    return render(request, 'tracker/create_project.html', {
+        'form': form,
+        'components': Component.objects.all(),
+        'technicians': technicians,
+        'document_form': DocumentForm(),
+    })
 
 # ----------------------- Component Views -----------------------
 
 @login_required
 def create_component_view(request):
+    """Create a new component (name/description/progress)."""
     form = ComponentForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
         form.save()
@@ -277,13 +375,13 @@ def create_component_view(request):
     
 @login_required
 def add_component(request, project_id):
+    """Create a component and link it to a given project (M2M)."""
     project = get_object_or_404(Project, id=project_id)
     if request.method == 'POST':
         form = ComponentForm(request.POST)
         if form.is_valid():
-            component = form.save(commit=False)
-            component.project = project
-            component.save()
+            component = form.save()
+            component.projects.add(project)
             messages.success(request, "Component added!")
             return redirect('project_detail', project_id=project.id)
     else:
@@ -292,15 +390,18 @@ def add_component(request, project_id):
 
 @login_required
 def edit_component(request, component_id):
+    """Edit a component and attach any selected tasks (M2M linkage)."""
     component = get_object_or_404(Component, id=component_id)
-    unlinked_tasks = Task.objects.filter(component__isnull=True) | Task.objects.filter(component=component)
+    unlinked_tasks = Task.objects.filter(Q(components__isnull=True) | Q(components=component)).distinct()
     
     if request.method == 'POST':
         form = ComponentForm(request.POST, instance=component)
         if form.is_valid():
             form.save()
             task_ids = request.POST.getlist('tasks')
-            Task.objects.filter(id__in=task_ids).update(component=component)
+            if task_ids:
+                for task in Task.objects.filter(id__in=task_ids):
+                    task.components.add(component)
             return redirect('components')
     else:
         form = ComponentForm(instance=component)
@@ -313,12 +414,17 @@ def edit_component(request, component_id):
     
 @login_required
 def components_view(request):
+    """List all components with simple filters in the template."""
     components = Component.objects.all()
-    return render(request, 'tracker/components.html', {'components': components})
+    projects = Project.objects.all()
+    return render(request, 'tracker/components.html', {
+        'components': components,
+        'projects': projects,
+    })
 
 @login_required
 def component_list_view(request):
-    components = Component.objects.select_related('project').order_by('-updated_at')
+    components = Component.objects.prefetch_related('projects').order_by('-updated_at')
     return render(request, 'tracker/component_list.html', {'components': components})
 
     
@@ -327,6 +433,11 @@ def component_list_view(request):
 
 @login_required
 def assign_tasks_view(request, component_id=None):
+    """Create a task and attach it to 0..n components.
+
+    If a specific component is passed in the URL, we default to that
+    when no explicit component is selected in the form.
+    """
     projects = Project.objects.all()
     components = Component.objects.all()
     technicians = User.objects.filter(groups__name='technician')
@@ -341,7 +452,7 @@ def assign_tasks_view(request, component_id=None):
         task = Task.objects.create(
             title=request.POST.get('title'),
             description=request.POST.get('description'),
-            project=Project.objects.get(id=request.POST.get('project')) if request.POST.get('project') else (selected_component.project if selected_component else None),
+            project=Project.objects.get(id=request.POST.get('project')) if request.POST.get('project') else (selected_component.projects.first() if selected_component else None),
             assigned_to=User.objects.get(id=request.POST.get('technician')),
             due_date=request.POST.get('due_date')
         )
@@ -394,6 +505,7 @@ def create_task_view(request, project_id):
 
 @login_required
 def submit_task(request, task_id):
+    """Technician submits a task with optional media for approval."""
     task = get_object_or_404(Task, id=task_id)
 
     if request.method == 'POST':
@@ -421,6 +533,7 @@ def submit_task(request, task_id):
 
 @login_required
 def project_task_detail_view(request, task_id):
+    """Task detail view for tasks that belong to a project."""
     task = get_object_or_404(Task, id=task_id, project__isnull=False)
 
     if request.user.groups.filter(name='technician').exists() and task.assigned_to != request.user:
@@ -433,6 +546,7 @@ def project_task_detail_view(request, task_id):
 
 @login_required
 def approve_task(request, task_id):
+    """Lead approves a task and updates project/component progress."""
     task = get_object_or_404(Task, id=task_id)
 
     if request.method == 'POST':
@@ -452,12 +566,13 @@ def approve_task(request, task_id):
 
         messages.success(request, f"Task '{task.title}' approved.")
 
-    # Redirect to the first component's detail view (or somewhere else)
+    # Redirect somewhere sensible after approval
+    if task.project:
+        return redirect('project_detail', project_id=task.project.id)
     first_component = task.components.first()
     if first_component:
         return redirect('component_detail', component_id=first_component.id)
-    else:
-        return redirect('all_tasks')  # fallback if no components are linked
+    return redirect('all_tasks')  # fallback: no project, no components
 
 
 
@@ -465,12 +580,91 @@ def approve_task(request, task_id):
 
 @login_required
 def tech_tasks_view(request):
-    tasks = Task.objects.filter(assigned_to=request.user)
-    return render(request, 'tracker/tech_tasks.html', {'tasks': tasks})
+    """Show all tasks assigned to the current technician with filtering."""
+    from django.db.models import Q
+    
+    # Start with tasks assigned to the current user
+    tasks = Task.objects.filter(assigned_to=request.user).select_related('assigned_to')
+    
+    # Check if clear filter is requested
+    if request.GET.get('clear'):
+        return redirect('tech_tasks')
+    
+    search_query = request.GET.get('search', '')
+    status_filter = request.GET.get('status', 'all')
+    deadline_filter = request.GET.get('deadline', '')
+    start_date = request.GET.get('start_date', '')
+    end_date = request.GET.get('end_date', '')
+    
+    if search_query:
+        tasks = tasks.filter(
+            Q(title__icontains=search_query) | 
+            Q(description__icontains=search_query) |
+            Q(assigned_to__username__icontains=search_query)
+        )
+    
+    if status_filter == 'completed':
+        tasks = tasks.filter(completed=True, is_approved=False)
+    elif status_filter == 'approved':
+        tasks = tasks.filter(is_approved=True)
+    elif status_filter == 'pending':
+        tasks = tasks.filter(completed=False, is_approved=False)
+    
+    if deadline_filter:
+        if deadline_filter == 'overdue':
+            from django.utils import timezone
+            today = timezone.now().date()
+            tasks = tasks.filter(due_date__lt=today, completed=False)
+        elif deadline_filter == 'today':
+            from django.utils import timezone
+            today = timezone.now().date()
+            tasks = tasks.filter(due_date=today)
+        elif deadline_filter == 'week':
+            from django.utils import timezone
+            from datetime import timedelta
+            today = timezone.now().date()
+            week_from_now = today + timedelta(days=7)
+            tasks = tasks.filter(due_date__gte=today, due_date__lte=week_from_now)
+    
+    # Handle date range filter
+    if start_date:
+        try:
+            from datetime import datetime
+            start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+            tasks = tasks.filter(due_date__gte=start_date_obj)
+        except ValueError:
+            pass  # Invalid date format, ignore the filter
+    
+    if end_date:
+        try:
+            from datetime import datetime
+            end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
+            tasks = tasks.filter(due_date__lte=end_date_obj)
+        except ValueError:
+            pass  # Invalid date format, ignore the filter
+    
+    # Default ordering by due date
+    tasks = tasks.order_by('due_date')
+    
+    # Get today's date for deadline highlighting
+    from django.utils import timezone
+    today = timezone.now().date()
+    
+    return render(request, 'tracker/tech_tasks.html', {
+        'tasks': tasks,
+        'search_query': search_query,
+        'status_filter': status_filter,
+        'deadline_filter': deadline_filter,
+        'start_date': start_date,
+        'end_date': end_date,
+        'today': today,
+        'projects': Project.objects.filter(assigned_users=request.user),
+    })
 
 
 @login_required
 def task_detail_view(request, task_id):
+    """Generic task detail (guards techs from viewing others' tasks)."""
     task = get_object_or_404(Task, id=task_id)
 
     if request.user.groups.filter(name='technician').exists() and task.assigned_to != request.user:
@@ -480,6 +674,7 @@ def task_detail_view(request, task_id):
 
 @user_passes_test(is_lead)
 def edit_task_view(request, task_id):
+    """Lead/staff can edit a task (title/desc/due/assignee)."""
     task = get_object_or_404(Task, id=task_id)
     technicians = User.objects.filter(groups__name='technician')
 
@@ -516,6 +711,7 @@ def edit_task_view(request, task_id):
 
 @login_required
 def review_task_for_approval(request, task_id):
+    """Lightweight review screen to approve/reject a task."""
     task = get_object_or_404(Task, id=task_id)
 
     if request.method == 'POST':
@@ -528,13 +724,32 @@ def review_task_for_approval(request, task_id):
             task.is_completed = False
             task.status = 'todo'
             task.save()
-        return redirect('project_detail', project_id=task.project.id if task.project else task.component.project.id)
+        elif action == 'revoke':
+            note = request.POST.get('rejection_note', '').strip()
+            if note:
+                existing = task.notes or ''
+                prefix = '\n\n' if existing else ''
+                task.notes = f"{existing}{prefix}Lead feedback: {note}"
+            task.is_approved = False
+            task.completed = False
+            task.status = 'todo'
+            task.save()
+        if task.project:
+            return redirect('project_detail', project_id=task.project.id)
+        first_component = task.components.first()
+        if first_component:
+            return redirect('component_detail', component_id=first_component.id)
+        return redirect('all_tasks')
 
-    return render(request, 'tracker/review_task_for_approval.html', {'task': task})
+    return render(request, 'tracker/review_task_for_approval.html', {
+        'task': task,
+        'projects': Project.objects.all(),
+    })
 
 @login_required
 def component_task_detail_view(request, task_id):
-    task = get_object_or_404(Task, id=task_id, component__isnull=False)
+    """Task detail for tasks that are attached to at least one component."""
+    task = get_object_or_404(Task, id=task_id, components__isnull=False)
 
     # Optional: restrict so only the assigned technician sees it
     if request.user.groups.filter(name='technician').exists() and task.assigned_to != request.user:
@@ -544,6 +759,7 @@ def component_task_detail_view(request, task_id):
 
 @login_required
 def component_task_completed_view(request, task_id):
+    """Technician submission flow for component tasks (uploads + notes)."""
     task = get_object_or_404(Task, id=task_id)
 
     if request.method == 'POST':
@@ -569,6 +785,7 @@ def component_task_completed_view(request, task_id):
 
 @login_required
 def assign_user_view(request, project_id):
+    """Add selected users to a project's team."""
     project = get_object_or_404(Project, id=project_id)
     users = User.objects.exclude(id__in=project.assigned_users.all())
     
@@ -583,6 +800,7 @@ def assign_user_view(request, project_id):
 
 @login_required
 def upload_document_view(request, project_id):
+    """Upload a document and associate it with a project."""
     project = get_object_or_404(Project, id=project_id)
     if request.method == 'POST':
         form = DocumentForm(request.POST, request.FILES)
@@ -597,6 +815,7 @@ def upload_document_view(request, project_id):
 
 @login_required
 def add_tasks_view(request, project_id):
+    """Upload a traveler or manually add tasks to a project."""
     project = get_object_or_404(Project, id=project_id)
     users = User.objects.all()
     components = Component.objects.all()
@@ -640,8 +859,9 @@ def add_tasks_view(request, project_id):
         'extracted_tasks': extracted_tasks
     })
 
-#delete tasks
+# delete tasks
 def delete_task_view(request, task_id):
+    """Delete a task (POST only), then go back to its project page."""
     task = get_object_or_404(Task, id=task_id)
 
     if request.method == 'POST':
@@ -671,6 +891,7 @@ def add_team_member(request, project_id):
 
 @login_required
 def calendar_view(request):
+    """Simple calendar feed for due-dated tasks + personal reminders."""
     user = request.user
     today = timezone.now().date()
     day_plus_2 = today + timedelta(days=2)
@@ -701,6 +922,7 @@ def calendar_view(request):
 
 @login_required
 def task_detail_api(request, task_id):
+    """Read-only JSON for a task (guards techs to own tasks only)."""
     try:
         task = Task.objects.select_related('project', 'assigned_to').get(pk=task_id)
     except Task.DoesNotExist:
@@ -748,6 +970,7 @@ def delete_reminder(request, reminder_id):
 
 @login_required
 def technician_dashboard(request):
+    """Tech home: reminders + upcoming tasks (next 3 days)."""
     reminders = Reminder.objects.filter(user=request.user).order_by('due_date')
     form = ReminderForm()
 
@@ -776,36 +999,101 @@ def technician_dashboard(request):
 
 @login_required
 def tech_project_detail_view(request, project_id):
+    """Tech-specific project view with filtering and sorting."""
+    from django.db.models import Q
+    
     project = get_object_or_404(Project, id=project_id)
-    tasks = Task.objects.filter(project=project, assigned_to=request.user)
+    # Show all tasks for the project, not just assigned to the user
+    tasks = Task.objects.filter(project=project).select_related('assigned_to')
+    
+    # Check if clear filter is requested
+    if request.GET.get('clear'):
+        return redirect('tech_project_detail', project_id=project_id)
     
     search_query = request.GET.get('search', '')
     status_filter = request.GET.get('status', 'all')
-    sort_by = request.GET.get('sort', '')
+    deadline_filter = request.GET.get('deadline', '')
+    start_date = request.GET.get('start_date', '')
+    end_date = request.GET.get('end_date', '')
     
     if search_query:
-        tasks = tasks.filter(title__icontains=search_query)
+        tasks = tasks.filter(
+            Q(title__icontains=search_query) | 
+            Q(description__icontains=search_query) |
+            Q(assigned_to__username__icontains=search_query)
+        )
+    
     if status_filter == 'completed':
-        tasks = tasks.filter(is_completed=True)
+        tasks = tasks.filter(completed=True, is_approved=False)
+    elif status_filter == 'approved':
+        tasks = tasks.filter(is_approved=True)
     elif status_filter == 'pending':
-        tasks = tasks.filter(is_completed=False)
-    if sort_by == 'due':
-        tasks = tasks.order_by('due_date')
-    elif sort_by == 'priority':
-        tasks = tasks.order_by('-priority')
+        tasks = tasks.filter(completed=False, is_approved=False)
+    
+    if deadline_filter:
+        if deadline_filter == 'overdue':
+            from django.utils import timezone
+            today = timezone.now().date()
+            tasks = tasks.filter(due_date__lt=today, completed=False)
+        elif deadline_filter == 'today':
+            from django.utils import timezone
+            today = timezone.now().date()
+            tasks = tasks.filter(due_date=today)
+        elif deadline_filter == 'week':
+            from django.utils import timezone
+            from datetime import timedelta
+            today = timezone.now().date()
+            week_from_now = today + timedelta(days=7)
+            tasks = tasks.filter(due_date__gte=today, due_date__lte=week_from_now)
+    
+    # Handle date range filter
+    if start_date:
+        try:
+            from datetime import datetime
+            start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+            tasks = tasks.filter(due_date__gte=start_date_obj)
+        except ValueError:
+            pass  # Invalid date format, ignore the filter
+    
+    if end_date:
+        try:
+            from datetime import datetime
+            end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
+            tasks = tasks.filter(due_date__lte=end_date_obj)
+        except ValueError:
+            pass  # Invalid date format, ignore the filter
+    
+    # Default ordering by due date
+    tasks = tasks.order_by('due_date')
+    
+    # Get all documents related to this project
+    project_documents = project.documents.all().order_by('-uploaded_at')
+    traveler_documents = TravelerDocument.objects.filter(related_project=project).order_by('-uploaded_at')
+    stored_files = StoredTravelerFile.objects.filter(project=project).order_by('-uploaded_at')
+    
+    # Get today's date for deadline highlighting
+    from django.utils import timezone
+    today = timezone.now().date()
     
     return render(request, 'tracker/tech_project_detail.html', {
         'project': project,
         'tasks': tasks,
         'search_query': search_query,
         'status_filter': status_filter,
-        'sort_by': sort_by,
+        'deadline_filter': deadline_filter,
+        'start_date': start_date,
+        'end_date': end_date,
+        'project_documents': project_documents,
+        'traveler_documents': traveler_documents,
+        'stored_files': stored_files,
+        'today': today,
     })
     
 @login_required
 def tech_component_detail_view(request, component_id):
+    """Tech-specific component view showing only my tasks."""
     component = get_object_or_404(Component, id=component_id)
-    tasks = component.task_set.filter(assigned_to=request.user)
+    tasks = component.tasks.filter(assigned_to=request.user)
 
     search_query = request.GET.get('search', '')
     status_filter = request.GET.get('status', 'all')
@@ -824,7 +1112,7 @@ def tech_component_detail_view(request, component_id):
     elif sort_by == 'priority':
         tasks = tasks.order_by('-priority')
 
-    return render(request, 'tracker/tech_component_detail.htm¹l', {
+    return render(request, 'tracker/tech_component_detail.html', {
         'component': component,
         'tasks': tasks,
         'search_query': search_query,
@@ -835,6 +1123,11 @@ def tech_component_detail_view(request, component_id):
     
 @login_required
 def save_extracted_tasks(request):
+    """Persist the previewed extracted tasks into real Task rows.
+
+    I loop over dynamic form keys tasks[i][...] and make Task rows. If a
+    component id is present, I link it through the M2M.
+    """
     if request.method == 'POST':
         tasks_data = request.POST
     
@@ -847,28 +1140,35 @@ def save_extracted_tasks(request):
             component_id = tasks_data.get(f'tasks[{i}][component]')
             due_date = tasks_data.get(f'tasks[{i}][due_date]')
     
-            Task.objects.create(
+            task = Task.objects.create(
                 title=title,
-                section=section, 
+                section=section,
                 assigned_to_id=user_id,
                 project_id=project_id,
-                component_id=component_id,
                 due_date=due_date
             )
+            if component_id:
+                try:
+                    task.components.add(int(component_id))
+                except Exception:
+                    pass
             i += 1
     
         messages.success(request, "All extracted tasks have been saved!")
-        return redirect('project_detail', pk=project_id)
+        return redirect('project_detail', project_id=project_id)
     
     return redirect('add_tasks')
 
 
 
 def extract_text_from_pdf(file_path):
+    """Minimal PDF text extractor using PyMuPDF (fitz)."""
+    import fitz  # Local import to avoid module import-time failures
     doc = fitz.open(file_path)
     return "\n".join(page.get_text() for page in doc)
 
 def extract_text_from_docx(file_path):
+    """DOCX text extractor (kept for future use)."""
     doc = docx.Document(file_path)
     return "\n".join(p.text for p in doc.paragraphs if p.text.strip())
 
@@ -880,6 +1180,7 @@ def extract_text_from_docx(file_path):
 # Asset Lookup View
 @login_required
 def asset_lookup_view(request):
+    """Excel lookup tool for component/asset metadata (latest or uploaded file)."""
     asset_data = None
     search_query = ""
     error_message = ""
@@ -917,6 +1218,7 @@ def asset_lookup_view(request):
 #tech component view
 @login_required
 def tech_components_view(request):
+    """Tech page: components plus quick asset inventory search (Excel)."""
     components = Component.objects.all()
     asset_data = None
     search_query = ""
@@ -938,6 +1240,10 @@ def tech_components_view(request):
             file_uploaded = True
             last_file_url = inventory_file.file.url
             last_file_name = uploaded_file.name
+            # Debug logging
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"New file uploaded: {file_path}, exists: {os.path.exists(file_path) if file_path else False}")
         else:
             try:
                 latest_file = InventoryUpload.objects.latest('uploaded_at')
@@ -945,35 +1251,89 @@ def tech_components_view(request):
                 file_uploaded = True
                 last_file_url = latest_file.file.url
                 last_file_name = os.path.basename(latest_file.file.name)
+                # Debug logging
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.info(f"Using latest file: {file_path}, exists: {os.path.exists(file_path) if file_path else False}")
             except InventoryUpload.DoesNotExist:
                 error_message = "No Excel file found. Please upload one."
                 file_path = None
 
-        if file_path:
+        if file_path and os.path.exists(file_path):
             try:
-                df = pd.read_excel(file_path)
-                df.columns = df.columns.str.strip()
-
-                if search_query and search_field in df.columns:
-                    col_data = df[search_field].astype(str).str.strip()
-                    if search_field == "Assembly number (Description)":
-                        # Exact match (case-insensitive)
-                        filtered_df = df[col_data.str.lower() == search_query.lower()]
-                    else:
-                        # Partial match
-                        filtered_df = df[col_data.str.lower().str.contains(search_query.lower())]
+                # Additional debugging
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.info(f"Attempting to read Excel file: {file_path}")
+                logger.info(f"File size: {os.path.getsize(file_path) if os.path.exists(file_path) else 'N/A'}")
+                
+                                # Check if pandas is available
+                if pd is None:
+                    error_message = "Pandas library not available. Please contact administrator."
+                    logger.error("Pandas library not available")
                 else:
+                    df = pd.read_excel(file_path)
+                    logger.info(f"Successfully read Excel file with {len(df)} rows and columns: {list(df.columns)}")
+                    
+                    # Check if file has data
+                    if len(df) == 0:
+                        error_message = "Excel file is empty. Please upload a file with data."
+                        logger.warning("Excel file is empty")
+                    elif len(df.columns) == 0:
+                        error_message = "Excel file has no columns. Please check the file format."
+                        logger.warning("Excel file has no columns")
+                    else:
+                        df.columns = df.columns.str.strip()
+
+                if pd is not None and 'df' in locals():
+                    if search_query:
+                        if search_field not in df.columns:
+                            available_columns = ', '.join(df.columns.tolist())
+                            error_message = f"Search field '{search_field}' not found in Excel file. Available columns: {available_columns}"
+                            logger.warning(f"Search field '{search_field}' not found. Available columns: {available_columns}")
+                        else:
+                            col_data = df[search_field].astype(str).str.strip()
+                            if search_field == "Assembly number (Description)":
+                                # Exact match (case-insensitive)
+                                filtered_df = df[col_data.str.lower() == search_query.lower()]
+                            else:
+                                # Partial match
+                                filtered_df = df[col_data.str.lower().str.contains(search_query.lower())]
+                            
+                            asset_data = filtered_df.to_dict(orient='records')
+                            
+                            if search_query:
+                                LookupHistory.objects.create(user=request.user, query=search_query)
+                            recent_lookups = LookupHistory.objects.filter(user=request.user).order_by('-timestamp')[:5]
+                else:
+                    # No search query, show all data
                     filtered_df = df
-
-                asset_data = filtered_df.to_dict(orient='records')
-
-                if search_query:
-                    LookupHistory.objects.create(user=request.user, query=search_query)
-                recent_lookups = LookupHistory.objects.filter(user=request.user).order_by('-timestamp')[:5]
+                    asset_data = filtered_df.to_dict(orient='records')
 
             except Exception as e:
                 error_message = f"Error reading file: {e}"
+                # Log the error for debugging
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Excel file read error: {e}, file_path: {file_path}")
+                
+                # Provide more helpful error messages for common issues
+                if "not a zip file" in str(e).lower():
+                    error_message = "Invalid Excel file format. Please ensure you're uploading a valid .xlsx file."
+                elif "password protected" in str(e).lower():
+                    error_message = "Excel file appears to be password protected. Please upload an unprotected file."
+                elif "corrupt" in str(e).lower():
+                    error_message = "Excel file appears to be corrupted. Please try uploading the file again."
+                elif "permission" in str(e).lower():
+                    error_message = "Permission denied reading file. Please check file permissions."
+        elif file_path:
+            error_message = f"File not found at path: {file_path}"
+        else:
+            error_message = "No Excel file available for search. Please upload a file first."
 
+    # Get projects for sidebar navigation
+    projects = Project.objects.all()[:5]  # Limit to 5 projects for sidebar
+    
     return render(request, 'tracker/tech_components.html', {
         'components': components,
         'asset_data': asset_data,
@@ -984,12 +1344,152 @@ def tech_components_view(request):
         'last_file_name': last_file_name,
         'recent_lookups': recent_lookups,
         'error_message': error_message,
+        'projects': projects,
     })
+
+
+@login_required
+def component_tasks_api(request, component_id):
+    """API endpoint to get tasks for a specific component assigned to the current user."""
+    from django.http import JsonResponse
+    from django.db.models import Q, Case, When, Value, BooleanField
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        component = Component.objects.get(id=component_id)
+        logger.info(f"Found component: {component.name} (ID: {component_id})")
+        
+        # Get tasks linked to this component and assigned to the current user
+        tasks = Task.objects.filter(
+            components=component,
+            assigned_to=request.user
+        ).select_related('assigned_to').prefetch_related('components')
+        
+        logger.info(f"Initial tasks query: {tasks.count()} tasks found")
+        logger.info(f"User: {request.user.username}, Component: {component.name}")
+        
+        # Apply search filter
+        search_query = request.GET.get('search', '')
+        if search_query:
+            tasks = tasks.filter(
+                Q(title__icontains=search_query) |
+                Q(description__icontains=search_query) |
+                Q(notes__icontains=search_query)
+            )
+            logger.info(f"After search filter: {tasks.count()} tasks")
+        
+        # Apply status filter
+        status_filter = request.GET.get('status', 'all')
+        if status_filter == 'pending':
+            tasks = tasks.filter(completed=False, is_approved=False)
+        elif status_filter == 'completed':
+            tasks = tasks.filter(completed=True, is_approved=False)
+        elif status_filter == 'approved':
+            tasks = tasks.filter(is_approved=True)
+        
+        logger.info(f"After status filter: {tasks.count()} tasks")
+        
+        # Order by due date (overdue first, then by due date)
+        from datetime import date
+        today = date.today()
+        tasks = tasks.annotate(
+            is_overdue=Case(
+                When(due_date__lt=today, completed=False, then=Value(True)),
+                default=Value(False),
+                output_field=BooleanField(),
+            )
+        ).order_by('-is_overdue', 'due_date')
+        
+        # Convert to JSON-serializable format
+        tasks_data = []
+        for task in tasks:
+            task_data = {
+                'id': task.id,
+                'title': task.title,
+                'description': task.description or '',
+                'notes': task.notes or '',
+                'priority': task.priority or '',
+                'assigned_to': task.assigned_to.username,
+                'due_date': task.due_date.strftime('%b %d, %Y') if task.due_date else '',
+                'completed': task.completed,
+                'is_approved': task.is_approved,
+                'created_at': task.created_at.strftime('%b %d, %Y'),
+                'updated_at': task.updated_at.strftime('%b %d, %Y') if task.updated_at != task.created_at else '',
+            }
+            tasks_data.append(task_data)
+        
+        logger.info(f"Returning {len(tasks_data)} tasks")
+        
+        # Debug: Let's also check all tasks for this component regardless of assignment
+        all_component_tasks = Task.objects.filter(components=component)
+        logger.info(f"Total tasks for component {component.name}: {all_component_tasks.count()}")
+        
+        # Debug: Check if there are any tasks assigned to this user
+        user_tasks = Task.objects.filter(assigned_to=request.user)
+        logger.info(f"Total tasks assigned to user {request.user.username}: {user_tasks.count()}")
+        
+        # Debug: Check all tasks in the system
+        total_tasks = Task.objects.all().count()
+        logger.info(f"Total tasks in system: {total_tasks}")
+        
+        # Debug: Check component-task relationships
+        component_task_count = component.tasks.count()
+        logger.info(f"Component.tasks.count(): {component_task_count}")
+        
+        # Debug: Check user-component relationships
+        user_component_tasks = Task.objects.filter(
+            components=component,
+            assigned_to=request.user
+        )
+        logger.info(f"User-component tasks: {user_component_tasks.count()}")
+        
+        # Debug: Show some sample task data
+        sample_tasks = Task.objects.filter(components=component)[:3]
+        sample_data = []
+        for task in sample_tasks:
+            sample_data.append({
+                'id': task.id,
+                'title': task.title,
+                'assigned_to': task.assigned_to.username if task.assigned_to else 'None',
+                'components_count': task.components.count()
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'tasks': tasks_data,
+            'component_name': component.name,
+            'debug_info': {
+                'total_component_tasks': all_component_tasks.count(),
+                'total_user_tasks': user_tasks.count(),
+                'user_id': request.user.id,
+                'component_id': component_id,
+                'total_system_tasks': total_tasks,
+                'component_tasks_count': component_task_count,
+                'user_component_tasks': user_component_tasks.count(),
+                'sample_tasks': sample_data
+            }
+        })
+        
+    except Component.DoesNotExist:
+        logger.error(f"Component not found: {component_id}")
+        return JsonResponse({
+            'success': False,
+            'error': 'Component not found'
+        }, status=404)
+    except Exception as e:
+        logger.error(f"Error in component_tasks_api: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
 
 # ----------------------- Upload Traveler View -----------------------
 
 @login_required
 def upload_tasks_from_traveler_view(request):
+    """Upload a traveler PDF and auto-extract tasks by sections/pages."""
     if request.method == 'POST':
         form = TravelerDocUploadForm(request.POST, request.FILES)
 
@@ -1039,7 +1539,27 @@ def upload_tasks_from_traveler_view(request):
             ext = os.path.splitext(temp_filename)[1].lower()
 
             if ext == '.pdf':
-                doc = fitz.open(temp_filename)
+                try:
+                    import fitz  # Local import to avoid module import-time failures
+                except Exception as e:
+                    return render(request, 'tracker/upload_from_doc.html', {
+                        'form': form,
+                        'stored_file': stored_file_obj,
+                        'error': (
+                            'PDF extraction is unavailable on this system. '
+                            'Your file was saved successfully. To enable extraction, '
+                            'install a compatible PyMuPDF build (e.g. "pip install --upgrade pymupdf").'
+                        )
+                    })
+
+                try:
+                    doc = fitz.open(temp_filename)
+                except Exception as e:
+                    return render(request, 'tracker/upload_from_doc.html', {
+                        'form': form,
+                        'stored_file': stored_file_obj,
+                        'error': 'Unable to open PDF for extraction. Your file is saved.'
+                    })
 
                 if start_page is not None and end_page is not None:
                     start_page = max(0, start_page - 1)
@@ -1100,7 +1620,10 @@ def upload_tasks_from_traveler_view(request):
                                 'page': actual_page_number
                             })
 
-                doc.close()
+                try:
+                    doc.close()
+                except Exception:
+                    pass
             else:
                 return render(request, 'tracker/upload_from_doc.html', {
                     'form': form,
@@ -1225,10 +1748,11 @@ def assign_single_task(request):
                 description=description or "",
                 due_date=due_date,
                 assigned_to=user,
-                component=component,
                 project=project,
                 section=section,
             )
+            if component:
+                task.components.add(component)
 
             return JsonResponse({'success': True, 'task_id': task.id})
 
@@ -1332,6 +1856,7 @@ def all_tasks_view(request):
 
     return render(request, 'tracker/alltasks.html', {
         'tasks': tasks,
+        'projects': Project.objects.all(),
     })
 
 

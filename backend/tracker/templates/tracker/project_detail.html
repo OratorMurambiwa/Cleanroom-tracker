@@ -19,6 +19,7 @@
   </style>
 </head>
 
+{# removed custom tag; use role redirect URL #}
 <body class="font-inter font-semibold bg-[var(--bg-softest)] text-[var(--text-dark)] min-h-screen flex flex-col">
 
   <!-- Top Bar -->
@@ -31,6 +32,7 @@
       <a href="{% url 'settings' %}" class="hover:text-[var(--accent-red)] transition hover:scale-110">
         <i data-lucide="settings" class="w-6 h-6"></i>
       </a>
+      
       <!-- Profile Dropdown -->
       <div class="relative">
         <button id="profileBtn" class="hover:text-[var(--accent-red)] transition hover:scale-110 focus:outline-none">
@@ -75,7 +77,10 @@
       <div class="lg:col-span-2 flex flex-col gap-6 overflow-hidden">
         <!-- Project Progress -->
         <div class="bg-white p-6 rounded-xl shadow">
-          <h2 class="text-xl font-bold text-[#a51c30]">{{ project.name }}</h2>
+          <div class="flex items-center justify-between gap-2">
+            <h2 class="text-xl font-bold text-[#a51c30]">{{ project.name }}</h2>
+            <a href="{% url 'dashboard' %}" class="text-xs bg-[#5b4d40] text-white px-3 py-1.5 rounded hover:bg-[#3e2f27] transition">Return to Dashboard</a>
+          </div>
           <p class="text-sm text-gray-700 my-2">{{ project.description }}</p>
           <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
             <div class="bg-[#a51c30] h-4 rounded-full" style="width: {{ project.progress }}%;"></div>

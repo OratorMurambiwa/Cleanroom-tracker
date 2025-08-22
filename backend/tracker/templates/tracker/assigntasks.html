@@ -19,6 +19,7 @@
   </style>
 </head>
 
+{# removed custom tag; use role redirect URL #}
 <body class="font-inter font-semibold bg-[var(--bg-softest)] text-[var(--text-dark)] min-h-screen flex flex-col">
   <!-- Top Bar -->
   <header class="bg-[var(--panel-bg)] shadow-md px-6 py-4 flex justify-between items-center h-[72px] border-b border-gray-300 relative">
@@ -30,6 +31,7 @@
       <a href="{% url 'settings' %}" class="hover:text-[var(--accent-red)] transition hover:scale-110">
         <i data-lucide="settings" class="w-6 h-6"></i>
       </a>
+      
       <div class="relative">
         <button id="profileBtn" class="hover:text-[var(--accent-red)] transition hover:scale-110 focus:outline-none">
           <i data-lucide="user-circle" class="w-6 h-6"></i>
@@ -56,55 +58,64 @@
         <a href="{% url 'components' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)] transition-all">
           <i data-lucide="package" class="w-5 h-5"></i> <span>Components</span>
         </a>
-        <a href="messages.html" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)] transition-all">
+        {% if projects %}
+        <a href="{% url 'project_messages' project_id=projects.0.id %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)] transition-all">
           <i data-lucide="messages-square" class="w-5 h-5"></i> <span>Messages</span>
         </a>
-        <a href="alerts.html" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)] transition-all">
+        {% else %}
+        <a href="{% url 'project_list' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)] transition-all">
+          <i data-lucide="messages-square" class="w-5 h-5"></i> <span>Messages</span>
+        </a>
+        {% endif %}
+        <a href="{% url 'alerts' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)] transition-all">
           <i data-lucide="bell" class="w-5 h-5"></i> <span>Alerts</span>
         </a>
       </nav>
     </aside>
 
     <!-- Page Content -->
-    <section class="flex-1 p-6 animate-fade-in pb-12">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <section class="flex-1 p-6 animate-fade-in pb-12 min-h-0">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full min-h-0">
         <!-- Assign Task -->
-        <form method="POST" class="flex flex-col space-y-4 flex-grow">
-          {% csrf_token %}
-          <input type="text" name="title" placeholder="Task Title" class="border px-2 py-1.5 rounded-md text-sm">
-          <textarea name="description" rows="4" placeholder="Task Description" class="border px-2 py-1.5 rounded-md text-sm"></textarea>
-          <div class="flex gap-4">
-            <select name="project" class="w-1/2 border px-2 py-1.5 rounded-md text-sm">
-              <option value="">Select Project</option>
-              {% for project in projects %}
-                <option value="{{ project.id }}">{{ project.name }}</option>
-              {% endfor %}
-            </select>
-            <select name="technician" class="w-1/2 border px-2 py-1.5 rounded-md text-sm">
-              <option value="">Select Technician</option>
-              {% for tech in technicians %}
-                <option value="{{ tech.id }}">{{ tech.username }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div>
-            <label for="components" class="block mb-1 text-sm font-medium">Select Components</label>
-            <select name="components" multiple class="w-full border px-2 py-1.5 rounded-md text-sm focus:outline-none focus:ring-[#a51c30]">
-              {% for comp in components %}
-                <option value="{{ comp.id }}">{{ comp.name }}</option>
-              {% endfor %}
-            </select>
-            <p class="text-xs text-gray-500 mt-1">Hold Ctrl (Windows) or Cmd (Mac) to select multiple.</p>
-          </div>
-          <div class="pt-4 space-y-2">
-            <input type="date" name="due_date" class="w-full border px-2 py-1.5 rounded-md text-sm focus:outline-none focus:ring-[#a51c30]">
-            <button type="submit" class="w-full bg-[var(--accent-red)] text-white px-4 py-2 rounded-md hover:bg-red-700 transition text-sm">Assign Task</button>
-            <a href="{% url 'upload_tasks_from_traveler' %}" class="block w-full text-center bg-[#5b4d40] text-white px-4 py-2 rounded-md hover:bg-[#3e2f27] transition text-sm">📄 Upload from Document</a>
-          </div>
-        </form>
+        <div class="bg-white rounded-xl shadow border border-[#e7c2c4] p-4 h-full overflow-y-auto flex flex-col">
+          <form method="POST" class="flex flex-col space-y-4 flex-grow min-h-0">
+            {% csrf_token %}
+            <input type="text" name="title" placeholder="Task Title" class="border px-2 py-1.5 rounded-md text-sm">
+            <textarea name="description" rows="4" placeholder="Task Description" class="border px-2 py-1.5 rounded-md text-sm"></textarea>
+            <div class="flex gap-4">
+              <select name="project" class="w-1/2 border px-2 py-1.5 rounded-md text-sm">
+                <option value="">Select Project</option>
+                {% for project in projects %}
+                  <option value="{{ project.id }}">{{ project.name }}</option>
+                {% endfor %}
+              </select>
+              <select name="technician" class="w-1/2 border px-2 py-1.5 rounded-md text-sm">
+                <option value="">Select Technician</option>
+                {% for tech in technicians %}
+                  <option value="{{ tech.id }}">{{ tech.username }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <label for="components" class="block mb-1 text-sm font-medium">Select Components</label>
+              <select name="components" multiple class="w-full border px-2 py-1.5 rounded-md text-sm focus:outline-none focus:ring-[#a51c30]">
+                {% for comp in components %}
+                  <option value="{{ comp.id }}">{{ comp.name }}</option>
+                {% endfor %}
+              </select>
+              <p class="text-xs text-gray-500 mt-1">Hold Ctrl (Windows) or Cmd (Mac) to select multiple.</p>
+            </div>
+            <div class="pt-4 space-y-2">
+              <input type="date" name="due_date" class="w-full border px-2 py-1.5 rounded-md text-sm focus:outline-none focus:ring-[#a51c30]">
+              <button type="submit" class="w-full bg-[var(--accent-red)] text-white px-4 py-2 rounded-md hover:bg-red-700 transition text-sm">Assign Task</button>
+              <a href="{% url 'upload_tasks_from_traveler' %}" class="block w-full text-center bg-[#5b4d40] text-white px-4 py-2 rounded-md hover:bg-[#3e2f27] transition text-sm">📄 Upload from Document</a>
+              <a href="{% url 'dashboard' %}" class="block w-full text-center text-xs bg-[#5b4d40] text-white px-4 py-2 rounded hover:bg-[#3e2f27] transition">Return to Dashboard</a>
+            </div>
+          </form>
+        </div>
 
         <!-- Approve Completed Tasks -->
-        <div class="bg-white rounded-xl shadow border border-[#e7c2c4] p-4 max-h-[620px] overflow-y-auto">
+        <div class="bg-white rounded-xl shadow border border-[#e7c2c4] p-4 h-full overflow-y-auto">
           <h2 class="text-md font-bold text-[var(--accent-red)] mb-4">Approve Completed Tasks</h2>
           <ul class="space-y-2">
             {% for task in pending_tasks %}

@@ -14,6 +14,11 @@
       --panel-bg: #f6f3f0;
       --text-dark: #1A1A1A;
     }
+    .theme-dark {
+      --bg-softest: #0f172a;   /* slate-900 */
+      --panel-bg: #111827;     /* gray-900 */
+      --text-dark: #e5e7eb;    /* gray-200 */
+    }
     .font-playfair { font-family: 'Playfair Display', serif; }
     .font-inter { font-family: 'Inter', sans-serif; }
   </style>
@@ -86,7 +91,7 @@
     <section class="flex-1 overflow-y-auto p-6">
       <h2 class="text-2xl font-bold text-[var(--accent-red)] mb-6">Settings</h2>
 
-      <form method="POST" class="space-y-6">
+      <form method="POST" class="space-y-6" id="settingsForm">
         {% csrf_token %}
         <!-- Dark Mode Toggle -->
         <div class="flex items-center justify-between">
@@ -132,6 +137,22 @@
           if (!dropdownMenu.contains(e.target) && !profileBtn.contains(e.target)) {
             dropdownMenu.classList.add('hidden');
           }
+        });
+      }
+      // Apply saved theme on load
+      const savedDark = localStorage.getItem('dark_mode') === 'true';
+      const toggle = document.getElementById('darkModeToggle');
+      if (savedDark) {
+        document.documentElement.classList.add('theme-dark');
+        if (toggle) toggle.checked = true;
+      }
+
+      // Persist theme when toggled
+      if (toggle) {
+        toggle.addEventListener('change', () => {
+          const enabled = toggle.checked;
+          localStorage.setItem('dark_mode', String(enabled));
+          document.documentElement.classList.toggle('theme-dark', enabled);
         });
       }
     });

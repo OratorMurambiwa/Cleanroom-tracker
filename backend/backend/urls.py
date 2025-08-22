@@ -3,6 +3,7 @@ from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
 from tracker import views
+from tracker import views_components as cviews
 from tracker.views import asset_lookup_view, tech_components_view, register_view
 
 urlpatterns = [
@@ -50,6 +51,7 @@ urlpatterns = [
 
     # Projects
     path('projects/', views.project_list_view, name='project_list'),
+    path('projects/create/', views.create_project_view, name='create_project_form'),
     path('projects/<int:project_id>/', views.project_detail_view, name='project_detail'),
     path('projects/<int:project_id>/create-task/', views.create_task_view, name='create_task'),
     path('projects/<int:project_id>/add-task/', views.add_tasks_view, name='add_tasks'),
@@ -61,12 +63,12 @@ urlpatterns = [
     path('project-task/<int:task_id>/', views.project_task_detail_view, name='project_task_detail'),
 
     # Components
-    path('components/', views.components_view, name='components'),
-    path('component-list/', views.component_list_view, name='component_list'),
-    path('create_component/', views.create_component_view, name='create_component'),
-    path('components/<int:component_id>/', views.component_detail_view, name='component_detail'),
-    path('components/<int:component_id>/edit/', views.edit_component, name='edit_component'),
-    path('components/<int:component_id>/assign-task/', views.assign_tasks_view, name='assign_component_task'),
+    path('components/', cviews.components_view, name='components'),
+    path('component-list/', cviews.component_list_view, name='component_list'),
+    path('create_component/', cviews.create_component_view, name='create_component'),
+    path('components/<int:component_id>/', cviews.component_detail_view, name='component_detail'),
+    path('components/<int:component_id>/edit/', cviews.edit_component, name='edit_component'),
+    path('components/<int:component_id>/assign-task/', cviews.assign_tasks_view, name='assign_component_task'),
     path('components/task/<int:task_id>/', views.component_task_detail_view, name='component_task_detail'),
     path('component-tasks/<int:task_id>/', views.component_task_completed_view, name='component_task_completed'),
 
@@ -74,6 +76,7 @@ urlpatterns = [
     path('tech/projects/', views.tech_project_list_view, name='tech_project_list'),
     path('tech/projects/<int:project_id>/', views.tech_project_detail_view, name='tech_project_detail'),
     path('tech/components/', views.tech_components_view, name='tech_components'),
+    path('api/component-tasks/<int:component_id>/', views.component_tasks_api, name='component_tasks_api'),
     path('tech/components/<int:component_id>/', views.tech_component_detail_view, name='tech_component_detail'),
     path('create-project/', views.create_project, name='create_project'),
     path('alerts/', views.alerts_view, name='alerts'),

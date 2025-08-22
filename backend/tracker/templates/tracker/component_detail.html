@@ -2,154 +2,246 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Component Detail</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ component.name }} | Component Details</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     .font-playfair { font-family: 'Playfair Display', serif; }
     .font-inter { font-family: 'Inter', sans-serif; }
-    @keyframes fade-in {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .animate-fade-in { animation: fade-in 0.6s ease-out; }
   </style>
 </head>
-
-<body class="font-inter font-semibold bg-gradient-to-br from-[#f4e7e5] to-[#f0d9d6] text-gray-800 min-h-screen flex flex-col">
-
-  <!-- Top Bar -->
-  <header class="bg-[#fcfbfa] shadow-md px-6 py-4 flex justify-between items-center h-[72px]">
-    <h1 class="text-2xl font-playfair text-[#a51c30]">Component Detail</h1>
-    <a href="{% url 'lead_dashboard' %}" class="text-sm text-[#a51c30] hover:underline">← Back to Dashboard</a>
-  </header>
-
-  <main class="flex-1 overflow-y-auto p-6 space-y-6 animate-fade-in">
-
-    <!-- Component Overview -->
-    <section class="bg-white p-6 rounded-xl shadow">
-      <h2 class="text-2xl font-bold text-[#a51c30] mb-2">{{ component.name }}</h2>
-      <p class="text-sm text-gray-600 mb-2">{{ component.description }}</p>
-
-      <div class="w-full bg-gray-300 h-4 rounded-full overflow-hidden mb-2">
-        <div class="bg-green-600 h-4 text-white text-xs text-center" style="width: {{ component.progress|floatformat:0 }}%;">
-          {{ component.progress|floatformat:0 }}%
+<body class="font-inter bg-[#f8f6f3] text-[#1A1A1A] min-h-screen flex flex-col">
+  <!-- Top Bar to match project detail -->
+  <header class="bg-[#f6f3f0] shadow-md px-6 py-4 flex justify-between items-center h-[72px] border-b border-gray-300 relative">
+    <h1 class="text-2xl font-playfair text-[#a51c30]">Components</h1>
+    <div class="flex items-center gap-6 relative">
+      <a href="{% url 'calendar' %}" class="hover:text-[#a51c30] transition hover:scale-110"><i data-lucide="calendar" class="w-6 h-6"></i></a>
+      <a href="{% url 'settings' %}" class="hover:text-[#a51c30] transition hover:scale-110"><i data-lucide="settings" class="w-6 h-6"></i></a>
+      <div class="relative">
+        <button id="profileBtn" class="hover:text-[#a51c30] transition hover:scale-110 focus:outline-none"><i data-lucide="user-circle" class="w-6 h-6"></i></button>
+        <div id="dropdownMenu" class="hidden absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded shadow-md z-50">
+          <div class="px-4 py-2 text-sm text-gray-600 border-b">Hello, {{ request.user.username }}</div>
+          <a href="{% url 'logout' %}" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Logout</a>
         </div>
       </div>
-      <p class="text-xs text-gray-500 mb-1">Status: {{ component.status }}</p>
-      <p class="text-xs text-gray-500">Last Updated: {{ component.updated_at|date:"F j, Y" }}</p>
-    </section>
+    </div>
+  </header>
 
-    <!-- Linked Project with Dropdown -->
-    <section class="bg-white p-6 rounded-xl shadow">
-      <h3 class="text-lg font-semibold text-[#a51c30] mb-4">Linked Project</h3>
+  <!-- Layout with Sidebar to match project detail -->
+  <main class="flex-1 flex overflow-hidden min-h-[calc(100vh-72px)]">
+    <!-- Sidebar Nav -->
+    <aside class="w-1/5 bg-[#f6f3f0] border-r border-gray-300 p-6 overflow-y-auto">
+      <nav class="flex flex-col gap-4">
+        <a href="{% url 'project_list' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all"><i data-lucide="folder" class="w-5 h-5"></i> <span>Projects</span></a>
+        <a href="{% url 'all_tasks' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all"><i data-lucide="list-todo" class="w-5 h-5"></i> <span>Tasks</span></a>
+        <a href="{% url 'components' %}" class="flex items-center gap-3 px-3 py-2 rounded-md bg-[#f4e8e7] text-[#a51c30]"><i data-lucide="package" class="w-5 h-5"></i> <span>Components</span></a>
+        {% if component.projects.all %}
+        <a href="{% url 'project_messages' project_id=component.projects.all.0.id %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all"><i data-lucide="messages-square" class="w-5 h-5"></i> <span>Messages</span></a>
+        {% endif %}
+        <a href="{% url 'alerts' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[#a51c30] transition-all"><i data-lucide="bell" class="w-5 h-5"></i> <span>Alerts</span></a>
+      </nav>
+    </aside>
 
-      {% if component.project %}
-        <p class="text-sm text-gray-800 mb-1 font-semibold">Current Project:</p>
-        <a href="{% url 'project_detail' component.project.id %}" class="text-sm text-blue-700 hover:underline">
-          {{ component.project.name }}
-        </a>
-        <p class="text-sm text-gray-600 mb-4">{{ component.project.description|truncatewords:20 }}</p>
-      {% else %}
-        <p class="text-sm text-gray-500 mb-4">No project linked yet.</p>
-      {% endif %}
+    <!-- Main Content Area -->
+    <div class="flex-1 h-[calc(100vh-72px)] grid grid-cols-1 xl:grid-cols-2 gap-6 p-6 overflow-hidden">
+      <!-- Left column: Overview + Tasks -->
+      <div class="flex flex-col gap-6 overflow-hidden">
+        <section class="bg-white border rounded-xl p-4">
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="text-lg font-semibold text-[#a51c30]">{{ component.name }}</h2>
+            <a href="{% url 'dashboard' %}" class="text-xs bg-[#5b4d40] text-white px-3 py-1.5 rounded hover:bg-[#3e2f27] transition">Return to Dashboard</a>
+          </div>
+          <p class="text-sm text-gray-700 mb-3 max-h-16 overflow-auto">{{ component.description|default:'No description' }}</p>
+          <div class="w-full bg-gray-200 rounded-full h-3 mb-2">
+            <div class="overview-progress bg-[#a51c30] h-3 rounded-full" data-progress="{{ component.progress|floatformat:'0' }}"></div>
+          </div>
+          <p class="text-xs text-gray-600">Status: {{ component.status }} • Updated: {{ component.updated_at|date:'M j, Y' }}</p>
+        </section>
 
-      <form method="POST" class="mt-4">
-        {% csrf_token %}
-        <label for="project_id" class="block text-sm font-medium text-gray-700 mb-1">Select Project:</label>
-        <select name="project_id" id="project_id" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm mb-2">
-          <option value="">-- Choose a project --</option>
-          {% for project in active_projects %}
-            <option value="{{ project.id }}">{{ project.name }}</option>
-          {% endfor %}
-        </select>
-        <button type="submit" class="bg-[#a51c30] text-white text-sm px-4 py-2 rounded hover:bg-red-700">Link Project</button>
-      </form>
-    </section>
-
-    <!-- Technicians Assigned + Assign Dropdown -->
-    <section class="bg-white p-6 rounded-xl shadow">
-      <h3 class="text-lg font-semibold text-[#a51c30] mb-4">Technicians Assigned</h3>
-
-      {% if assigned_techs %}
-        <ul class="space-y-2 mb-4">
-          {% for tech in assigned_techs %}
-            <li class="text-sm text-gray-700">👨‍🔧 {{ tech.get_full_name }}</li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <p class="text-sm text-gray-500 mb-4">No technicians assigned yet.</p>
-      {% endif %}
-
-      <form method="POST">
-        {% csrf_token %}
-        <label for="technician_id" class="block text-sm font-medium text-gray-700 mb-1">Select Technician:</label>
-        <select name="technician_id" id="technician_id" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm mb-2">
-          <option value="">-- Choose a technician --</option>
-          {% for tech in technicians %}
-            <option value="{{ tech.id }}">{{ tech.get_full_name }}</option>
-          {% endfor %}
-        </select>
-        <button type="submit" class="bg-[#a51c30] text-white text-sm px-4 py-2 rounded hover:bg-red-700">Assign</button>
-      </form>
-    </section>
-
-    
-    <!-- Tasks -->
-    <section class="bg-white p-6 rounded-xl shadow">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-semibold text-[#a51c30]">Tasks</h3>
-        <a href="{% url 'assign_component_task' component.id %}" class="text-sm bg-[#a51c30] text-white px-3 py-1 rounded hover:bg-red-700">Assign Task</a>
+        <section class="bg-white border rounded-xl p-4 flex-1 min-h-0">
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="text-lg font-semibold text-[#a51c30]">Tasks</h2>
+            <a href="{% url 'assign_component_task' component.id %}" class="text-xs bg-[#a51c30] text-white px-3 py-1 rounded">Assign</a>
+          </div>
+          <!-- Filters -->
+          <form method="get" class="grid grid-cols-2 gap-2 text-xs mb-2">
+            <input name="search" value="{{ search_query }}" placeholder="Keyword" class="border rounded px-2 py-1" />
+            <select name="status" class="border rounded px-2 py-1">
+              <option value="">All status</option>
+              <option value="todo" {% if status_filter == 'todo' %}selected{% endif %}>To Do</option>
+              <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>In Progress</option>
+              <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+              <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved</option>
+            </select>
+            <select name="assigned_to" class="border rounded px-2 py-1">
+              <option value="">All techs</option>
+              {% for u in filter_techs %}
+                <option value="{{ u.id }}" {% if assigned_to_filter|add:'' == u.id|add:'' %}selected{% endif %}>
+                  {{ u.get_full_name|default:u.username }}
+                </option>
+              {% endfor %}
+            </select>
+            <div class="flex gap-2">
+              <input type="date" name="start_date" value="{{ start_date }}" class="border rounded px-2 py-1 flex-1" />
+              <input type="date" name="end_date" value="{{ end_date }}" class="border rounded px-2 py-1 flex-1" />
+            </div>
+            <button class="col-span-2 bg-gray-200 px-2 py-1 rounded">Apply</button>
+          </form>
+          <div id="tasksPanel" class="border-t pt-3 h-full overflow-auto pr-1">
+            {% for t in tasks %}
+              <a href="{% url 'task_detail' t.id %}" class="block py-2 border-b last:border-b-0">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-sm font-medium">{{ t.title }}</p>
+                    <p class="text-xs text-gray-600">Assigned to: {{ t.assigned_to.get_full_name|default:t.assigned_to.username|default:'Unassigned' }}</p>
+                    <p class="text-xs text-gray-600">Deadline: {% if t.due_date %}{{ t.due_date|date:'M j, Y' }}{% else %}<em>None</em>{% endif %}</p>
+                  </div>
+                  <span class="text-xs text-gray-600">{{ t.status }}</span>
+                </div>
+              </a>
+            {% empty %}
+              <p class="text-sm text-gray-600">No tasks yet.</p>
+            {% endfor %}
+          </div>
+        </section>
       </div>
-      <ul class="space-y-3">
-        {% for task in component.task_set.all %}
-        <li class="border p-4 rounded-lg hover:bg-[#fdf3f2] transition">
-          <a href="{% url 'review_task_for_approval' task.id %}" class="block">
-            <h4 class="font-semibold text-blue-700 hover:underline">{{ task.title }}</h4>
-            <p class="text-sm text-gray-600 mb-1">{{ task.description }}</p>
-            <p class="text-xs text-gray-500">
-              <strong>Status:</strong>
-              {% if task.is_approved %}
-                <span class="text-green-600 font-medium">Approved</span>
-              {% elif task.completed %}
-                <span class="text-yellow-600 font-medium">Completed</span>
-              {% else %}
-                <span class="text-gray-600">Pending</span>
-              {% endif %}
-            </p>
-            <p class="text-xs text-gray-500">
-              <strong>Due Date:</strong>
-              {% if task.due_date %}
-                {{ task.due_date|date:"F j, Y" }}
-              {% else %}
-                <span class="italic">Not set</span>
-              {% endif %}
-            </p>
-          </a>
-        </li>
-        {% empty %}
-        <li class="text-sm text-gray-500">No tasks assigned to this component.</li>
-        {% endfor %}
-      </ul>
-    </section>
 
+      <!-- Right column: Linked Projects + Upload + Members -->
+      <div class="flex flex-col gap-6 overflow-auto">
+        <section class="bg-white border rounded-xl p-4">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-lg font-semibold text-[#a51c30]">Linked Projects</h2>
+            <form method="post" class="flex items-center gap-2">
+              {% csrf_token %}
+              <select name="project_id" class="border rounded px-2 py-1 text-sm">
+                <option value="">Select project…</option>
+                {% for p in active_projects %}
+                  <option value="{{ p.id }}">{{ p.name }}</option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="bg-[#a51c30] text-white text-sm px-3 py-1 rounded">Link</button>
+            </form>
+          </div>
+          <div class="overflow-auto max-h-40 pr-1">
+            {% for p in component.projects.all %}
+              <a href="{% url 'project_detail' p.id %}" class="inline-block bg-[#f4e8e7] text-[#a51c30] px-2 py-1 rounded text-xs mr-2 mb-2">{{ p.name }}</a>
+            {% empty %}
+              <p class="text-sm text-gray-600">No linked projects.</p>
+            {% endfor %}
+          </div>
+        </section>
 
-    <!-- Optional Documents -->
-    {% if component.documents.all %}
-    <section class="bg-white p-6 rounded-xl shadow">
-      <h3 class="text-lg font-semibold text-[#a51c30] mb-4">Documents</h3>
-      <ul class="space-y-2">
-        {% for doc in component.documents.all %}
-          <li class="flex justify-between text-sm text-gray-700 border-b pb-1">
-            <a href="{{ doc.file.url }}" class="underline">{{ doc.file.name|slice:":25" }}</a>
-            <span class="text-xs text-gray-500">{{ doc.uploaded_at|date:"M d, Y" }}</span>
-          </li>
-        {% endfor %}
-      </ul>
-    </section>
-    {% endif %}
+        <section class="bg-white border rounded-xl p-4">
+          <h2 class="text-lg font-semibold text-[#a51c30] mb-3">Documents</h2>
+          <form method="post" enctype="multipart/form-data" class="flex flex-wrap items-end gap-2">
+            {% csrf_token %}
+            <div class="w-full">
+              <label class="block text-xs text-gray-600 mb-1">Description</label>
+              {{ document_form.description }}
+            </div>
+            <div class="w-full">
+              <label class="block text-xs text-gray-600 mb-1">File</label>
+              {{ document_form.file }}
+            </div>
+            {% if component.projects.all %}
+            <div>
+              <label class="block text-xs text-gray-600 mb-1">Also attach to project</label>
+              <select name="project_id" class="border rounded px-2 py-1 text-sm">
+                <option value="">----</option>
+                {% for p in component.projects.all %}
+                  <option value="{{ p.id }}">{{ p.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            {% endif %}
+            <button type="submit" class="bg-[#a51c30] text-white text-xs px-3 py-2 rounded">Upload</button>
+          </form>
 
+          <!-- Existing documents for this component -->
+          <div class="mt-4 max-h-48 overflow-auto pr-1">
+            <ul class="space-y-2 text-sm">
+              {% for doc in component.documents.all %}
+                <li class="flex items-center justify-between border-b pb-1">
+                  <div class="min-w-0 mr-3">
+                    <a href="{{ doc.file.url }}" class="underline break-all">{{ doc.file.name|default:doc.description|default:"Document" }}</a>
+                    {% if doc.description %}
+                      <p class="text-xs text-gray-600 truncate">{{ doc.description }}</p>
+                    {% endif %}
+                    {% if doc.project %}
+                      <p class="text-[10px] text-gray-500">Project: {{ doc.project.name }}</p>
+                    {% endif %}
+                  </div>
+                  <span class="text-[10px] text-gray-500 shrink-0">{{ doc.uploaded_at|date:"M d, Y" }}</span>
+                </li>
+              {% empty %}
+                <li class="text-gray-500">No documents uploaded yet.</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </section>
+
+        <section class="bg-white border rounded-xl p-4">
+          <h2 class="text-lg font-semibold text-[#a51c30] mb-2">Members</h2>
+          <div class="overflow-auto max-h-40 pr-1 mb-3">
+            <ul class="space-y-1">
+              {% for u in project_members %}
+                <li class="text-sm">{{ u.get_full_name|default:u.username }}</li>
+              {% empty %}
+                <li class="text-sm text-gray-600">No members found.</li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% if available_users %}
+          <form method="post" class="flex items-end gap-2 text-xs">
+            {% csrf_token %}
+            <div class="flex-1">
+              <label class="block text-xs text-gray-600 mb-1">Add user</label>
+              <select name="add_member_user_id" class="border rounded px-2 py-1 w-full">
+                {% for u in available_users %}
+                  <option value="{{ u.id }}">{{ u.get_full_name|default:u.username }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            {% if component.projects.all %}
+            <div>
+              <label class="block text-xs text-gray-600 mb-1">To project</label>
+              <select name="add_member_project_id" class="border rounded px-2 py-1">
+                <option value="">(first linked)</option>
+                {% for p in component.projects.all %}
+                  <option value="{{ p.id }}">{{ p.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            {% endif %}
+            <button type="submit" class="bg-[#a51c30] text-white px-3 py-2 rounded">Add</button>
+          </form>
+          {% else %}
+          <p class="text-xs text-gray-600">Everyone is already a member of the linked projects.</p>
+          {% endif %}
+        </section>
+      </div>
+    </div>
   </main>
+
+  <script>
+    lucide.createIcons();
+    const profileBtn = document.getElementById('profileBtn');
+    const dropdownMenu = document.getElementById('dropdownMenu');
+    if (profileBtn && dropdownMenu) {
+      profileBtn.addEventListener('click', () => dropdownMenu.classList.toggle('hidden'));
+      document.addEventListener('click', function (e) {
+        if (!profileBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
+          dropdownMenu.classList.add('hidden');
+        }
+      });
+    }
+    const overviewBar = document.querySelector('.overview-progress');
+    if (overviewBar) {
+      const p = parseInt(overviewBar.dataset.progress || '0', 10);
+      overviewBar.style.width = `${Math.max(0, Math.min(100, p))}%`;
+    }
+  </script>
 </body>
 </html>

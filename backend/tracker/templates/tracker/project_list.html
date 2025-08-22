@@ -27,7 +27,7 @@
 
   <!-- Top Bar -->
   <header class="bg-[var(--panel-bg)] shadow-md px-6 py-4 flex justify-between items-center h-[72px] border-b border-gray-300 relative">
-    <h1 class="text-2xl font-playfair text-[var(--accent-red)]">Dashboard</h1>
+    <h1 class="text-2xl font-playfair text:[var(--accent-red)]">Projects</h1>
     <div class="flex items-center gap-6 relative">
       <a href="{% url 'calendar' %}" class="hover:text-[var(--accent-red)] transition hover:scale-110">
         <i data-lucide="calendar" class="w-6 h-6"></i>
@@ -52,7 +52,7 @@
     <!-- Sidebar -->
     <aside class="w-1/5 bg-[var(--panel-bg)] border-r border-gray-300 p-6 overflow-y-auto">
       <nav class="flex flex-col gap-4 text-[var(--text-dark)]">
-        <a href="{% url 'project_list' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)] transition-all">
+        <a href="{% url 'project_list' %}" class="flex items-center gap-3 px-3 py-2 rounded-md bg-[#f4e8e7] text-[var(--accent-red)]">
           <i data-lucide="folder" class="w-5 h-5"></i> <span>Projects</span>
         </a>
         <a href="{% url 'all_tasks' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)] transition-all">
@@ -61,10 +61,7 @@
         <a href="{% url 'components' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)] transition-all">
           <i data-lucide="package" class="w-5 h-5"></i> <span>Components</span>
         </a>
-        <a href="messages.html" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)] transition-all">
-          <i data-lucide="messages-square" class="w-5 h-5"></i> <span>Messages</span>
-        </a>
-        <a href="alerts.html" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)] transition-all">
+        <a href="{% url 'alerts' %}" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#f4e8e7] hover:text-[var(--accent-red)] transition-all">
           <i data-lucide="bell" class="w-5 h-5"></i> <span>Alerts</span>
         </a>
       </nav>
@@ -73,56 +70,54 @@
     <!-- Page Content -->
     <section class="flex-1 p-6 animate-fade-in overflow-y-auto pb-24">
       <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-playfair text-[var(--accent-red)]">My Projects</h2>
-        <button onclick="document.getElementById('addModal').classList.remove('hidden')" class="bg-[var(--accent-red)] text-white px-4 py-2 rounded hover:bg-red-700 text-sm">
-          + Add Project
-        </button>
+        <h2 class="text-xl font-playfair text-[var(--accent-red)]">All Projects</h2>
+        <div class="flex items-center gap-2">
+          <a href="{% url 'create_project_form' %}" class="bg-[var(--accent-red)] text-white text-sm px-4 py-2 rounded hover:bg-red-700">Add Project</a>
+          <a href="{% url 'dashboard' %}" class="text-sm bg-[#5b4d40] text-white px-4 py-2 rounded hover:bg-[#3e2f27] transition">Return to Dashboard</a>
+        </div>
       </div>
 
-      {% for project in projects %}
-        <div class="bg-white rounded-xl shadow border border-[#e7c2c4] p-4 mb-4">
-          <div class="flex justify-between items-center">
-            <div>
-              <h3 class="text-lg font-semibold text-[var(--accent-red)]">{{ project.name }}</h3>
-              <p class="text-sm text-gray-600">{{ project.description }}</p>
-            </div>
-            <a href="{% url 'project_detail' project.id %}" class="bg-[var(--accent-red)] text-white px-4 py-1 rounded hover:bg-red-700 text-sm">View</a>
-          </div>
-          <div class="w-full bg-gray-200 h-3 rounded-full overflow-hidden mt-2">
-            <div class="bg-black h-3 text-white text-xs text-center" style="width: {{ project.progress }}%;">
-              {{ project.progress }}%
-            </div>
-          </div>
+      <!-- Filter Section -->
+      <div class="bg-white rounded-xl shadow border border-[#e7c2c4] p-4 mb-6">
+        <div class="flex flex-wrap items-center gap-4">
+          <select class="filter-status border border-[#e7c2c4] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#a51c30]">
+            <option value="">All Statuses</option>
+            <option value="ongoing">Ongoing</option>
+            <option value="completed">Completed</option>
+            <option value="paused">Paused</option>
+          </select>
         </div>
-      {% empty %}
-        <p class="text-sm text-gray-500">No projects found.</p>
-      {% endfor %}
+      </div>
+
+      <!-- Project Cards -->
+      <div class="project-grid grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {% for project in projects %}
+        <a href="{% url 'project_detail' project.id %}" class="block">
+          <div class="project-card bg-white rounded-xl shadow border border-[#e7c2c4] p-6 cursor-pointer hover:shadow-md transition"
+               data-status="{{ project.status }}" data-title="{{ project.name }}">
+            <h3 class="text-lg font-bold text-[var(--accent-red)] mb-2">{{ project.name }}</h3>
+            <p class="text-sm text-gray-700 mb-1">Components:
+              {% for c in project.components.all %}
+                <span class="inline-block bg-[#f4e8e7] text-[var(--accent-red)] px-2 py-0.5 rounded mr-1 text-xs">{{ c.name }}</span>
+              {% empty %}
+                <span class="text-gray-500">None</span>
+              {% endfor %}
+            </p>
+            <div class="w-full bg-gray-200 rounded-full h-3 mb-2">
+              <div class="bg-[var(--accent-red)] h-3 rounded-full" style="width: {{ project.progress|floatformat:'0' }}%"></div>
+            </div>
+            <div class="flex justify-between items-center mt-2">
+              <span class="text-sm text-gray-600">Status: {{ project.status }}</span>
+              <span class="text-sm text-white bg-[var(--accent-red)] px-4 py-1 rounded-md">View</span>
+            </div>
+          </div>
+        </a>
+        {% empty %}
+          <p class="text-gray-500 text-sm mt-4">No projects found yet.</p>
+        {% endfor %}
+      </div>
     </section>
   </main>
-
-  <!-- Modal -->
-  <div id="addModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
-    <div class="bg-white w-full max-w-lg p-6 rounded shadow-xl border border-gray-300">
-      <h2 class="text-xl font-semibold text-[var(--accent-red)] mb-4">New Project</h2>
-      <form method="post" action="{% url 'create_project' %}">
-        {% csrf_token %}
-        <input name="name" type="text" placeholder="Project Name" required class="w-full mb-3 border border-gray-300 rounded p-2">
-        <textarea name="description" rows="3" placeholder="Project Description" required class="w-full mb-3 border border-gray-300 rounded p-2"></textarea>
-
-        <label class="block text-sm font-medium mb-1">Contributors</label>
-        <select name="contributors" multiple class="w-full border border-gray-300 p-2 rounded mb-4">
-          {% for user in all_users %}
-            <option value="{{ user.id }}">{{ user.get_full_name|default:user.username }}</option>
-          {% endfor %}
-        </select>
-
-        <div class="flex justify-end gap-2">
-          <button type="button" onclick="document.getElementById('addModal').classList.add('hidden')" class="px-4 py-2 border border-gray-300 rounded">Cancel</button>
-          <button type="submit" class="bg-[var(--accent-red)] hover:bg-red-700 text-white px-4 py-2 rounded">Save</button>
-        </div>
-      </form>
-    </div>
-  </div>
 
   <script>
     lucide.createIcons();
@@ -134,6 +129,20 @@
         dropdownMenu.classList.add('hidden');
       }
     });
+
+    const statusSelect = document.querySelector('.filter-status');
+    const projectCards = document.querySelectorAll('.project-card');
+
+    function filterCards() {
+      const selectedStatus = statusSelect.value;
+      projectCards.forEach(card => {
+        const status = card.dataset.status;
+        const matchesStatus = !selectedStatus || status === selectedStatus;
+        card.style.display = matchesStatus ? 'block' : 'none';
+      });
+    }
+
+    statusSelect.addEventListener('change', filterCards);
   </script>
 </body>
 </html>

@@ -76,6 +76,10 @@
         <!-- Projects & Components -->
         <div class="flex flex-col flex-1 bg-[var(--panel-bg)] border border-[#e7c2c4]/70 shadow-sm shadow-[#d4a5a57e] rounded-xl p-4 h-full">
           <h2 class="text-lg font-playfair mb-2 text-[var(--accent-red)]">Active Projects</h2>
+          <div class="flex justify-end gap-2 mb-3">
+            <a href="{% url 'create_project_form' %}" class="inline-flex items-center gap-2 bg-[#a51c30] text-white px-3 py-1.5 text-xs rounded hover:bg-red-700 transition"><i data-lucide="plus-circle" class="w-4 h-4"></i>New Project</a>
+            <a href="{% url 'create_component' %}" class="inline-flex items-center gap-2 bg-[#a51c30] text-white px-3 py-1.5 text-xs rounded hover:bg-red-700 transition"><i data-lucide="puzzle" class="w-4 h-4"></i>New Component</a>
+          </div>
           {% for project in projects %}
             <div class="bg-white rounded-xl shadow border border-[#e7c2c4] p-4 mb-4">
               <h2 class="text-lg font-playfair text-[var(--accent-red)] mb-2">{{ project.name }}</h2>
@@ -114,13 +118,20 @@
           <ul class="space-y-3">
             {% for task in pending_tasks %}
               <li class="border border-gray-300 p-4 rounded-lg hover:bg-[#fdf3f2] transition">
-                <a href="{% url 'approve_task' task.id %}" class="block">
+                <a href="{% url 'review_task_for_approval' task.id %}" class="block">
                   <h4 class="font-semibold text-blue-700 hover:underline">{{ task.title }}</h4>
                   <p class="text-sm text-gray-600">{{ task.description }}</p>
-                  <p class="text-xs text-gray-500">
-                    Project: {{ task.project.name }}<br/>
-                    Status: <span class="text-yellow-600 font-medium">Completed (Pending Approval)</span>
-                  </p>
+                  <div class="mt-1 text-xs text-gray-700 space-y-0.5">
+                    <p><span class="font-medium">Assigned to:</span> {{ task.assigned_to.get_full_name|default:task.assigned_to.username }}</p>
+                    <p><span class="font-medium">Due date:</span> {{ task.due_date|date:"Y-m-d" }}</p>
+                    <p><span class="font-medium">Components:</span>
+                      {% for c in task.components.all %}
+                        {{ c.name }}{% if not forloop.last %}, {% endif %}
+                      {% empty %}—{% endfor %}
+                    </p>
+                    <p><span class="font-medium">Project:</span> {{ task.project.name }}</p>
+                    <p><span class="font-medium">Status:</span> <span class="text-yellow-600 font-medium">Completed (Pending Approval)</span></p>
+                  </div>
                 </a>
               </li>
             {% empty %}
